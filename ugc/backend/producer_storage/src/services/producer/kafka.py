@@ -22,7 +22,7 @@ class KafkaProducer(BaseProducer):
         )
 
     def produce(
-        self, topic: str, key: str = None, value: ModelMetaclass = None, partition: int = None, timestamp: int= None
+        self, topic: str, key: str = None, value: ModelMetaclass = None, partition: int = -1, timestamp: int = 0
     ) -> None:
 
         self.producer.produce(

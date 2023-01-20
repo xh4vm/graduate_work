@@ -1,5 +1,7 @@
+import enum
 from abc import ABC
 from typing import Any
+from pydantic import Field
 
 from .base import JSONModel
 
@@ -12,6 +14,7 @@ class AvroSchema(ABC):
         'date': 'int',
         'time': 'int',
         'datetime': 'long',
+        'EventType': 'string',
     }
 
     @classmethod
@@ -23,9 +26,16 @@ class AvroSchema(ABC):
         return {'name': cls.__name__, 'type': 'record', 'fields': fields}
 
 
+class EventType(str, enum.Enum):
+    START = 'start'
+    STOP = 'stop'
+    PROCESS = 'process'
+
+
 class MovieFrameDatagram(JSONModel):
     movie_id: str
     frame_time: int
+    event_type: EventType = Field(default=EventType.PROCESS)
 
 
 class MovieFrame(AvroSchema, MovieFrameDatagram):
