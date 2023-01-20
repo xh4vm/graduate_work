@@ -1,0 +1,32 @@
+[
+    {
+        "name": "total rows",
+        "description": "",
+        "query": "SELECT COUNT(*) FROM views_progress"
+    },
+    {
+        "name": "top 20 movie pop",
+        "description": "",
+        "query": "SELECT movie_id, COUNT(*) movie_count FROM views_progress GROUP BY movie_id ORDER BY movie_count DESC LIMIT 20"
+    },
+    {
+        "name": "movie less 10 views",
+        "description": "",
+        "query": "SELECT COUNT(*) FROM (SELECT movie_id, COUNT(*) movie_count FROM views_progress GROUP BY movie_id) as view_movie_counter WHERE movie_count<10"
+    },
+    {
+        "name": "top 20 biggest movie",
+        "description": "",
+        "query": "SELECT movie_id, sum(movie_frame) as sum_movie_frame FROM views_progress GROUP BY movie_id ORDER BY sum_movie_frame DESC LIMIT 20"
+    },
+    {
+        "name": "top 20 users watch largest movie",
+        "description": "",
+        "query": "SELECT user_id, count(*) as movies_count FROM (SELECT DISTINCT user_id, movie_id FROM views_progress GROUP BY user_id, movie_id) as view_user_movie GROUP BY user_id ORDER BY movies_count DESC LIMIT 20"
+    },
+    {
+        "name": "top 20 users watch movie longest",
+        "description": "",
+        "query": "SELECT user_id, SUM(max_user_movie_frame) as total_user_movies_frame FROM (SELECT DISTINCT user_id, movie_id, MAX(movie_frame) as max_user_movie_frame FROM views_progress GROUP BY user_id, movie_id) as view_user_movie GROUP BY user_id ORDER BY total_user_movies_frame DESC LIMIT 20"
+    }
+]

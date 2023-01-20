@@ -1,0 +1,13 @@
+version: '3.8'
+
+x-base-service: &base_service
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+  networks:
+    - recommended
+
+
+networks:
+  recommended:
+    driver: bridge
