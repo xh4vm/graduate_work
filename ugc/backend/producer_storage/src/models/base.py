@@ -10,3 +10,4 @@ class JSONModel(GenericModel):
     class Config:
         json_loads = orjson.loads
         json_dumps = orjson_dumps
+        use_enum_values = True

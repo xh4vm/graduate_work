@@ -17,7 +17,7 @@ class AppSettings(Settings):
     PROJECT_NAME: str
     API_PATH: str
     API_URL: str
-    SCHEMA_REGISTRY_URL: str
+    SCHEMA_REGISTRY_URL: str = Field('http://localhost:8081')
     API_VERSION: str
     SWAGGER_PATH: str
     JSON_SWAGGER_PATH: str

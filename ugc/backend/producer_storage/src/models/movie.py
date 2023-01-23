@@ -1,32 +1,27 @@
-from abc import ABC
-from typing import Any
+import enum
+from pydantic import Field
+from datetime import datetime
 
 from .base import JSONModel
 
 
-class AvroSchema(ABC):
-    __avro_types__ = {
-        'str': 'string',
-        'int': 'long',
-        'uuid': 'string',
-        'date': 'int',
-        'time': 'int',
-        'datetime': 'long',
-    }
+class EventType(str, enum.Enum):
+    STARTING = 'starting'
+    STOPPED = 'stopped'
+    VIEWED = 'viewed'
 
-    @classmethod
-    def schema(cls) -> dict[str, Any]:
-        fields = [
-            {'name': field.alias, 'type': cls.__avro_types__.get(field.type_.__name__)}
-            for field in cls.__fields__.values()
-        ]
-        return {'name': cls.__name__, 'type': 'record', 'fields': fields}
+
+class Event(JSONModel):
+    type: EventType = Field(default=EventType.VIEWED)
+    timestamp: int = Field(default_factory=lambda : int(datetime.utcnow().timestamp()))
+    generated_after: int | None = Field(default=None)
 
 
 class MovieFrameDatagram(JSONModel):
     movie_id: str
     frame_time: int
+    event: Event
 
 
-class MovieFrame(AvroSchema, MovieFrameDatagram):
+class MovieFrame(MovieFrameDatagram):
     pass

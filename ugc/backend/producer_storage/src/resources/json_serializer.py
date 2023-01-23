@@ -1,17 +1,14 @@
-import json
+import orjson
 from typing import Callable, Any
-from confluent_kafka.schema_registry import SchemaRegistryClient
-from confluent_kafka.schema_registry.json_schema import JSONSerializer
 from pydantic.main import ModelMetaclass
 
 from dependency_injector import resources
 
+from .serializer import Serializer
 
 class JSONSerializerResource(resources.Resource):
     def init(
         self,
-        schema: dict[str, Any],
-        registry: SchemaRegistryClient,
         to_dict: Callable[[ModelMetaclass], dict[str, Any]] = None,
-    ) -> JSONSerializer:
-        return JSONSerializer(schema_str=json.dumps(schema), schema_registry_client=registry, to_dict=to_dict)
+    ) -> Serializer:
+        return Serializer(lambda obj: orjson.dumps(to_dict(obj)))

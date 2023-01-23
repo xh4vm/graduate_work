@@ -3,8 +3,8 @@ aiohttp==3.8.1
 aiohttp-apispec==2.2.3
 aiohttp-security==0.4.0
 aiohttp-session==2.9.0
+aiokafka==0.8.0
 async-timeout==4.0.2
-confluent_kafka==1.8.2
 dependency_injector==4.39.1
 fastapi==0.79.0
 fastavro==1.7.0
