@@ -7,6 +7,48 @@ x-base-service: &base_service
   networks:
     - graduate
 
+x-redis: &base_redis
+  <<: *base_service
+  image: redis:7.0-alpine
+  container_name: redis
+  restart: unless-stopped
+  expose:
+    - ${REDIS_PORT}
+  healthcheck:
+    test: [ "CMD", "redis-cli","ping" ]
+    interval: 30s
+    timeout: 10s
+    retries: 5
+
+x-base-clickhouse-node: &base-clickhouse-node
+  <<: *base_service
+  image: yandex/clickhouse-server:22.1
+  env_file: .env
+  mem_limit: 1g
+  expose:
+    - 9000
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+  depends_on:
+    - zookeeper-clickhouse
+  healthcheck:
+    test: curl http://x-base-clickhouse-node:8123 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+    interval: 30s
+    timeout: 10s
+    retries: 5
+
+x-base-kafka: &base_kafka
+  <<: *base_service
+  image: confluentinc/cp-kafka:7.3.0
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+    - ./ugc/kafka/start.sh:/tmp/start.sh
+  command: "bash -c 'if [ ! -f /tmp/start.sh ]; then echo \"ERROR: Did you forget the start.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/start.sh && /etc/confluent/docker/run ; fi'"
+
+
 services:
 
   nginx:
@@ -20,7 +62,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/configs/producer_storage.conf:/etc/nginx/conf.d/producer_storage.conf:ro
+      - ./nginx/configs/:/etc/nginx/conf.d/:ro
       - ./nginx/static/errors:/var/www/errors/:ro
       - ./nginx/static/log/access_log:/var/log/nginx/access.log:rw
       - ./nginx/static/log/error_log:/var/log/nginx/error.log:rw
@@ -28,9 +70,328 @@ services:
       producer-storage:
         condition: service_healthy
     ports:
+      - ${SPARK_MASTER_WEB_PORT}:${SPARK_MASTER_WEB_PORT}
       - ${PRODUCER_STORAGE_PORT}:${PRODUCER_STORAGE_PORT}
+
+  redis:
+    <<: *base_redis
+    profiles:
+      - dev_ugc
+      - dev_graduate
+      - prod
+    volumes:
+      - redis-data:/data
+
+  producer-storage:
+    <<: *base_service
+    build: ./ugc/backend/producer_storage
+    container_name: producer-storage
+    env_file: .env
+    profiles:
+      - dev_graduate
+      - prod
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ugc/backend/producer_storage:/opt/content
+    expose:
+      - ${PRODUCER_STORAGE_PORT}
+    healthcheck:
+      test: curl http://producer-storage:${PRODUCER_STORAGE_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kafka01:
+    <<: *base_kafka
+    hostname: kafka01
+    container_name: kafka01
+    env_file: .env
+    profiles:
+      - dev_ugc
+      - dev_graduate
+      - prod
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka01:9092,CONTROLLER://kafka01:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka01:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka01:9093,2@kafka02:9093,3@kafka03:9093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+
+
+  kafka02:
+    <<: *base_kafka
+    hostname: kafka02
+    container_name: kafka02
+    env_file: .env
+    profiles:
+      - dev_ugc
+      - dev_graduate
+      - prod
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka02:9092,CONTROLLER://kafka02:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka02:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka01:9093,2@kafka02:9093,3@kafka03:9093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+
+
+  kafka03:
+    <<: *base_kafka
+    hostname: kafka03
+    container_name: kafka03
+    env_file: .env
+    profiles:
+      - dev_ugc
+      - dev_graduate
+      - prod
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka03:9092,CONTROLLER://kafka03:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka03:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka01:9093,2@kafka02:9093,3@kafka03:9093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+
+
+  control-center:
+    <<: *base_service
+    image: confluentinc/cp-enterprise-control-center:7.3.0
+    hostname: control-center
+    container_name: control-center
+    profiles:
+      - dev_ugc
+      - dev_graduate
+      - prod
+    depends_on:
+      - kafka01
+      - kafka02
+      - kafka03
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka01:9092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+    healthcheck:
+      test: curl http://control-center:9021 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 60s
+      timeout: 30s
+      retries: 15
+
+  zookeeper-clickhouse:
+    <<: *base_service
+    image: confluentinc/cp-zookeeper:7.3.0
+    hostname: zookeeper-clickhouse
+    container_name: zookeeper-clickhouse
+    profiles:
+      - clickhouse
+      - dev_ugc
+      - dev_graduate
+      - prod
+    environment:
+      ZOOKEEPER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - clickhouse-zookeeper:/var/lib/zookeeper
+    mem_limit: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  clickhouse-initer:
+    <<: *base_service
+    build: ./ugc/backend/clickhouse_initer
+    container_name: clickhouse-initer
+    env_file: .env
+    profiles: 
+      - dev_graduate
+      - prod
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ugc/backend/clickhouse_initer/mapping:/opt/clickhouse_initer/mapping:ro
+    depends_on:
+      clickhouse-node1:
+        condition: service_healthy
+      clickhouse-node2:
+        condition: service_healthy
+      clickhouse-node3:
+        condition: service_healthy
+      clickhouse-node4:
+        condition: service_healthy
+        
+  clickhouse-node1:
+    <<: *base-clickhouse-node
+    container_name: clickhouse-node1
+    profiles:
+      - clickhouse
+      - dev_ugc
+      - dev_graduate
+      - prod
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
+      - ./ugc/clickhouse/config/node1:/etc/clickhouse-server
+    ports:
+      - "9000:9000"
+
+  clickhouse-node2:
+    <<: *base-clickhouse-node
+    container_name: clickhouse-node2
+    profiles:
+      - clickhouse
+      - dev_ugc
+      - dev_graduate
+      - prod
+    volumes:
+      - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
+      - ./ugc/clickhouse/config/node2:/etc/clickhouse-server
+
+
+  clickhouse-node3:
+    <<: *base-clickhouse-node
+    container_name: clickhouse-node3
+    profiles:
+      - clickhouse
+      - dev_ugc
+      - dev_graduate
+      - prod
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
+      - ./ugc/clickhouse/config/node3:/etc/clickhouse-server
+
+
+  clickhouse-node4:
+    <<: *base-clickhouse-node
+    container_name: clickhouse-node4
+    profiles:
+      - clickhouse
+      - dev_ugc
+      - dev_graduate
+      - prod
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
+      - ./ugc/clickhouse/config/node4:/etc/clickhouse-server
+
+  spark-master:
+    <<: *base_service
+    image: bitnami/spark:3.2.3-debian-11-r19
+    container_name: spark-master
+    hostname: spark-master
+    restart: on-failure
+    volumes:
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+    profiles:
+      - dev_graduate
+      - prod
+    expose:
+      - ${SPARK_MASTER_WEB_PORT}
+      - ${SPARK_MASTER_PORT}
+    environment:
+      - SPARK_MODE=master
+    healthcheck:
+      test: curl http://spark-master:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  spark-worker01:
+    <<: *base_service
+    image: bitnami/spark:3.2.3-debian-11-r19
+    container_name: spark-worker01
+    hostname: spark-worker01
+    restart: on-failure
+    volumes:
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+    profiles:
+      - dev_graduate
+      - prod
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+
+  spark-worker02:
+    <<: *base_service
+    image: bitnami/spark:3.2.3-debian-11-r19
+    container_name: spark-worker02
+    hostname: spark-worker02
+    restart: on-failure
+    volumes:
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+    profiles:
+      - dev_graduate
+      - prod
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+
+  spark-worker03:
+    <<: *base_service
+    image: bitnami/spark:3.2.3-debian-11-r19
+    container_name: spark-worker03
+    hostname: spark-worker03
+    restart: on-failure
+    volumes:
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+    profiles:
+      - dev_graduate
+      - prod
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+
+  jupyter-notebook:
+    <<: *base_service
+    image: jupyter/pyspark-notebook:java-17.0.5
+    container_name: jupyter-notebook
+    hostname: jupyter-notebook
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    volumes:
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+    profiles:
+      - dev_graduate
+    ports:
+      - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
 
 networks:
   graduate:
     driver: bridge
+
+volumes:
+  redis-data:
+  clickhouse-zookeeper:

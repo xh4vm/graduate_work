@@ -70,7 +70,7 @@ build-dockers:
 .PHONY: interactive build docker grad services 
 build-dockers-grad:
 	$(call log,Build grad containers)
-	docker-compose --profile dev_graduate --file ./ugc/docker-compose.yml --file ./recommender_system/docker-compose.yml --file ./docker-compose.yml  up --build
+	docker-compose --profile dev_graduate up --build
 
 .PHONY: run pre-commit all files
 pre-commit-files:

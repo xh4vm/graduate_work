@@ -31,6 +31,8 @@ services:
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
+    volumes:
+      - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
       - dev_graduate
@@ -52,6 +54,8 @@ services:
     container_name: spark-worker01
     hostname: spark-worker01
     restart: on-failure
+    volumes:
+      - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
       - dev_graduate
@@ -69,6 +73,8 @@ services:
     container_name: spark-worker02
     hostname: spark-worker02
     restart: on-failure
+    volumes:
+      - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
       - dev_graduate
@@ -86,6 +92,8 @@ services:
     container_name: spark-worker03
     hostname: spark-worker03
     restart: on-failure
+    volumes:
+      - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
       - dev_graduate
@@ -107,6 +115,7 @@ services:
       spark-master:
         condition: service_healthy
     volumes:
+      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
       - ./jupyter-notebook/work:/home/jovyan/work
     profiles:
       - dev_recom
