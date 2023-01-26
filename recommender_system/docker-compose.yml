@@ -1,9 +1,9 @@
 version: '3.8'
 
 x-base-service: &base_service
-  volumes:
-    - /etc/localtime:/etc/localtime:ro
-    - /etc/timezone:/etc/timezone:ro
+#  volumes:
+#    - /etc/localtime:/etc/localtime:ro
+#    - /etc/timezone:/etc/timezone:ro
   networks:
     - recommended
 
@@ -15,8 +15,8 @@ services:
     profiles:
       - dev_recom
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+#      - /etc/localtime:/etc/localtime:ro
+#      - /etc/timezone:/etc/timezone:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/configs/:/etc/nginx/conf.d/:ro
       - ./nginx/static/errors:/var/www/errors/:ro
@@ -40,6 +40,8 @@ services:
       - ${SPARK_MASTER_PORT}
     environment:
       - SPARK_MODE=master
+    volumes:
+      - .:/work
     healthcheck:
       test: curl http://spark-master:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
