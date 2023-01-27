@@ -1,66 +1,108 @@
-from src.core.config import (BASE_DIR, FILE_RATING_PATH, MODEL_PARAMS, SPARK_MASTER_HOST, SPARK_MASTER_PORT,
-                             MONGO_CONNECT_STRING, MONGO_DATABASES, MONGO_COLLECTION, SAMPLE_SIZE)
-from src.db.source.file_data_source import FileDataSet
-from pyspark import SparkContext, SparkConf
-from pyspark.mllib.recommendation import ALS
+from src.core.config import SETTINGS
+
 from pyspark.sql import SparkSession
+from pyspark import SparkContext, RDD
+from pyspark.mllib.recommendation import ALS
 from pyspark.sql.functions import desc
 
+from src.db.source.file_data_source import FileDataSet
+from src.db.receiver.mongodb.mongodb import mdb
 
-conf = SparkConf().setAppName('Recommendation service - Recommender').setMaster(
-    'spark://{0}:{1}'.format(SPARK_MASTER_HOST, SPARK_MASTER_PORT)
-)
 
-# conf = SparkConf().setAppName('Recommendation service - Recommender').set(
-#     'spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1')
+class AlsRecommender:
+    spark: SparkSession
+    sc: SparkContext
+    scores_dataframe: RDD
+    trim_dataset: bool
+    sample_size: int | None
+    rank: int = 5
+    iter: int = 5
+    regular: float = 0.1
+    alpha: float = 10.0
 
-sc = SparkContext(conf=conf)
-sc.setLogLevel('WARN')
+    def __init__(
+        self,
+        spark_session: SparkSession,
+        scores_dataframe: RDD,
+        trim_dataset: bool = False,
+        sample_size: int | None = None
+    ):
+        self.spark = spark_session
+        self.sc = spark_session.sparkContext
+        self.scores_dataframe = scores_dataframe
+        self.trim_dataset = trim_dataset
+        self.sample_size = sample_size
 
-spark_session = SparkSession.builder.appName(
-    'Recommendation service - Recommender'
-).config(
-    'spark.mongodb.output.uri', MONGO_CONNECT_STRING
-).config(
-    'spark.mongodb.output.database', MONGO_DATABASES['db_data']
-).config(
-    'spark.mongodb.output.collection', MONGO_COLLECTION
-).getOrCreate()
+    def set_model_params(self, rank: int, _iter: int, regular: float, alpha: float):
+        self.rank = rank
+        self.iter = _iter
+        self.regular = regular
+        self.alpha = alpha
 
-datas = FileDataSet(sc, BASE_DIR)
+    def save_recommendations(self, predictions: RDD):
+        predictions_df = self.spark.createDataFrame(predictions).withColumnRenamed(
+            'user', 'user_id'
+        ).withColumnRenamed(
+            'product', 'film_id'
+        ).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
 
-full_ratings_data = datas.get_data(filename=FILE_RATING_PATH)
-full_data_no_ratings = full_ratings_data.map(lambda x: (int(x[0]), int(x[1])))
+        predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
-sample_size = SAMPLE_SIZE
-fraction = sample_size / full_ratings_data.count()
+    def make_recommendations(self):
 
-ratings_data = full_ratings_data.sample(False, fraction, 1001)
-data_no_ratings = ratings_data.map(lambda x: (int(x[0]), int(x[1])))
+        if self.trim_dataset:
+            sample_size = SETTINGS.sample_size
+            fraction = sample_size / self.scores_dataframe.count()
+            scores_data = self.scores_dataframe.sample(False, fraction, 1001)
+        else:
+            scores_data = self.scores_dataframe
 
-model = ALS.trainImplicit(
-    ratings_data,
-    MODEL_PARAMS['rank'],
-    MODEL_PARAMS['iter'],
-    float(MODEL_PARAMS['regul']),
-    alpha=float(MODEL_PARAMS['alpha'])
-)
+        data_no_scores = scores_data.map(lambda x: (int(x[0]), int(x[1])))
 
-# rec_users = model.recommendProductsForUsers(30)
-predictions = model.predictAll(full_data_no_ratings)
-# predictions = model.predictAll(data_no_ratings)
+        model = ALS.trainImplicit(
+            scores_data,
+            self.rank,
+            self.iter,
+            float(self.regular),
+            alpha=float(self.alpha)
+        )
 
-predictions_df = spark_session.createDataFrame(predictions).withColumnRenamed(
-    'user', 'user_id'
-).withColumnRenamed(
-    'product', 'film_id'
-).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
+        predictions = model.predictAll(data_no_scores)
 
-predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").option(
-    'spark.mongodb.output.uri', MONGO_CONNECT_STRING
-).option(
-    'spark.mongodb.output.database', MONGO_DATABASES['db_data']
-).option(
-    'spark.mongodb.output.collection', MONGO_COLLECTION
-).save()
+        self.save_recommendations(predictions)
 
+
+if __name__ == '__main__':
+
+    spark_b = SparkSession.builder.master(SETTINGS.spark.master).appName(
+        '{0} - Recommender'.format(SETTINGS.spark.app_name)
+    )
+
+    spark_s = mdb.init_spark(
+        spark_b,
+        connect_string=SETTINGS.mongo.connect_string,
+        db_name=SETTINGS.mongo.databases['db_data'],
+        collection_name=SETTINGS.mongo.collection,
+    ).getOrCreate()
+
+    sc = spark_s.sparkContext
+
+    sc.setLogLevel('WARN')
+
+    recommender = AlsRecommender(
+        spark_s,
+        FileDataSet(sc, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path),
+        SETTINGS.spark.trim_train_dataset,
+        SETTINGS.sample_size
+    )
+
+    recommender.set_model_params(
+        rank=SETTINGS.als.params['rank'],
+        _iter=SETTINGS.als.params['iter'],
+        regular=float(SETTINGS.als.params['regular']),
+        alpha=float(SETTINGS.als.params['alpha'])
+    )
+
+    recommender.make_recommendations()
+
+    spark_s.stop()

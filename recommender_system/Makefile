@@ -157,11 +157,16 @@ poetry run python src/db/receiver/mongodb/create_collections.py
 .PHONY: install dependencies
 spark_install_dependencies:
 	$(call log,Install dependencies)
-	docker exec -it spark-master bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
 	docker exec -it spark-master bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker01 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
 	docker exec -it spark-worker01 bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker02 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
 	docker exec -it spark-worker02 bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
 	docker exec -it spark-worker03 bash -c 'pip install -r /work/requirements.txt'
+
+
+.PHONY: get params for recommendations model
+params_recom:
+	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$$PYTHONPATH; spark-submit /work/src/train_model.py'
+
+.PHONY: make recommendations
+make_recom:
+	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$$PYTHONPATH; spark-submit /work/src/recommender.py'

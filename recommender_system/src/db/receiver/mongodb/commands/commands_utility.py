@@ -3,7 +3,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 from loguru import logger
-from src.core.config import MONGO_DATABASES
+from src.core.config import SETTINGS
 from src.db.receiver.mongodb.mongodb import AsyncMongoDB
 from src.utilities.utilities import DateEncoder, datetime_parser
 
@@ -25,7 +25,7 @@ async def perform_command_from_json_file(
     for scope, collection in collections.items():
         db_name_key, collection_name, comm = scope.split('.')
         result = await database_client.exec_command(
-            db_name=MONGO_DATABASES[db_name_key],
+            db_name=SETTINGS.mongo.databases[db_name_key],
             command=OrderedDict(collection)
         )
         count = result.get('n')
