@@ -7,7 +7,7 @@ ROOT_DIR = BASE_DIR.parent.parent
 
 
 class SparkSettings(BaseSettings):
-    master: str
+    master: str | None
     master_host: str
     master_port: int
     app_name: str

@@ -1,5 +1,4 @@
 import gc
-
 from src.core.config import SETTINGS
 from src.db.source.base import DataSet
 from src.db.source.file_data_source import FileDataSet
