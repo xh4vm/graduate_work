@@ -165,8 +165,8 @@ spark_install_dependencies:
 
 .PHONY: get params for recommendations model
 params_recom:
-	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$$PYTHONPATH; spark-submit /work/src/train_model.py'
+	export PYTHONPATH=${PWD}; src/train_model.py
 
 .PHONY: make recommendations
 make_recom:
-	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$$PYTHONPATH; spark-submit /work/src/recommender.py'
+	export PYTHONPATH=${PWD}; src/recommender.py'
