@@ -1,19 +1,18 @@
-from core.config import (BASE_DIR, SAMPLE_SIZE, SEED,
-                         RANKS, REGULS, ITERS, ALPHA,
-                         MODEL_PARAMS_FILE_NAME, FILE_RATING_PATH)
-from db.file_data_source import FileDataSet
+from src.core.config import (BASE_DIR, SAMPLE_SIZE, SEED,
+                             RANKS, REGULS, ITERS, ALPHA,
+                             MODEL_PARAMS_FILE_NAME, FILE_RATING_PATH, SPARK_MASTER_HOST, SPARK_MASTER_PORT)
+from src.db.source.file_data_source import FileDataSet
 from loguru import logger
 from tqdm import tqdm
 import itertools
 from pyspark import SparkContext, SparkConf
 from pyspark.mllib.recommendation import ALS
-from metrics import get_rmse
-from utils.utils import quiet_logs
+from src.metrics import get_rmse
 
-conf = SparkConf().setAppName("Recommendation service - ALS model evaluation")
+conf = SparkConf().setAppName("Recommendation service - ALS model evaluation").setMaster(
+    'spark://{0}:{1}'.format(SPARK_MASTER_HOST, SPARK_MASTER_PORT)
+)
 sc = SparkContext(conf=conf)
-
-quiet_logs(sc)
 
 datas = FileDataSet(sc, BASE_DIR)
 

@@ -2,7 +2,7 @@ import os
 from pyspark.rdd import RDD
 import json
 
-from db.base import DataSet
+from src.db.source.base import DataSet
 
 
 class FileDataSet(DataSet):

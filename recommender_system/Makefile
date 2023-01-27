@@ -110,3 +110,58 @@ ch-load:
 .PHONY: execute queries for clickhouse
 ch-benchmark:
 	source venv/bin/activate; ./venv/bin/python3 backend/clickhouse/src/benchmarks.py
+
+.PHONY: run mongo containers
+mongo: run_containers
+
+.PHONY: interactive build mongo cluster
+mongo_cfg: config_cluster create_recommendations_coll
+
+
+.PHONY: run install dependencies in spark cluster
+spark_dep: spark_install_dependencies
+
+
+.PHONY: run docker mongodb containers
+run_containers:
+	$(call log,Run containers)
+	docker-compose -f docker-compose_mongodb.yml --profile mongo up
+
+.PHONY: configure the cluster
+config_cluster:
+	$(call log,Configure the cluster)
+	docker exec -it mongocfg1 bash -c 'echo "rs.initiate({_id: \"mongors1conf\", configsvr: true, members: [{_id: 0, host: \"mongocfg1\"}, {_id: 1, host: \"mongocfg2\"}, {_id: 2, host: \"mongocfg3\"}]})" | mongosh'
+	sleep 2
+	docker exec -it mongors1n1 bash -c 'echo "rs.initiate({_id: \"mongors1\", members: [{_id: 0, host: \"mongors1n1\"}, {_id: 1, host: \"mongors1n2\"}, {_id: 2, host: \"mongors1n3\"}]})" | mongosh'
+	sleep 10
+	docker exec -it mongos1 bash -c 'echo "sh.addShard(\"mongors1/mongors1n1\")" | mongosh'
+	sleep 2
+	docker exec -it mongors2n1 bash -c 'echo "rs.initiate({_id: \"mongors2\", members: [{_id: 0, host: \"mongors2n1\"}, {_id: 1, host: \"mongors2n2\"}, {_id: 2, host: \"mongors2n3\"}]})" | mongosh'
+	sleep 10
+	docker exec -it mongos1 bash -c 'echo "sh.addShard(\"mongors2/mongors2n1\")" | mongosh'
+
+.PHONY: create database
+create_mongo_db:
+	$(call log,Create database)
+	docker exec -it mongors1n1 bash -c 'echo "use recommender" | mongosh'
+	docker exec -it mongos1 bash -c 'echo "sh.enableSharding(\"movies\")" | mongosh'
+
+
+.PHONY: create recommendations collections with index
+create_recommendations_coll:
+	$(call log,Create collections)
+	export PYTHONPATH=${PWD}; \
+poetry run python src/db/receiver/mongodb/create_collections.py
+
+
+.PHONY: install dependencies
+spark_install_dependencies:
+	$(call log,Install dependencies)
+	docker exec -it spark-master bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
+	docker exec -it spark-master bash -c 'pip install -r /work/requirements.txt'
+	docker exec -it spark-worker01 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
+	docker exec -it spark-worker01 bash -c 'pip install -r /work/requirements.txt'
+	docker exec -it spark-worker02 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
+	docker exec -it spark-worker02 bash -c 'pip install -r /work/requirements.txt'
+	docker exec -it spark-worker03 bash -c 'PYTHONPATH=/work/:$PYTHONPATH'
+	docker exec -it spark-worker03 bash -c 'pip install -r /work/requirements.txt'
