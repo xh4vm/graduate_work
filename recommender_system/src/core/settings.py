@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     spark = SparkSettings().parse_obj(SparkSettings().dict())
     mongo = MongoSettings().parse_obj(MongoSettings().dict())
     als = AlsSettings().parse_obj(AlsSettings().dict())
-    sample_size = 1000
+    sample_size = 100000
     seed = 1001
     backoff_max_tries = 3
     file_rating_path = 'jupyter-notebook/work/ratings.csv'

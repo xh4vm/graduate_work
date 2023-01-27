@@ -1,0 +1,130 @@
+import gc
+
+from src.core.config import SETTINGS
+from src.db.source.base import DataSet
+from src.db.source.file_data_source import FileDataSet
+from loguru import logger
+from tqdm import tqdm
+import itertools
+from pyspark import SparkContext, SparkConf, RDD
+from pyspark.mllib.recommendation import ALS
+from src.metrics import get_rmse
+
+
+class AlsTuner:
+    sc: SparkContext
+    dataset: DataSet
+    scores_dataframe: RDD
+    trim_dataset: bool
+    sample_size: int | None
+    rank: int = 5
+    iter: int = 5
+    regular: float = 0.1
+    alpha: float = 10.0
+    nb_validating: int
+    rdd_validating_with_ratings: RDD
+    rdd_validating_no_ratings: RDD
+    rdd_training: RDD
+    parameters: dict
+    params_file_name: str
+    seed: int
+
+    def __init__(
+        self,
+        spark_context: SparkContext,
+        dataset: DataSet,
+        seed: int,
+        params_file_name: str,
+        trim_dataset: bool = False,
+        sample_size: int | None = None,
+        **kwargs
+    ):
+        self.sc = spark_context
+        self.dataset = dataset
+        self.scores_dataframe = self.dataset.get_data(filename=kwargs['filename'])
+        self.trim_dataset = trim_dataset
+        self.sample_size = sample_size
+        self.params_file_name = params_file_name
+        self.seed = seed
+
+        self.sc.setLogLevel('WARN')
+
+    def find_parameters(self):
+        final_rank = 0
+        final_regular = float(0)
+        final_iter = -1
+        final_dist = float(300)
+        final_alpha = float(0)
+
+        for c_rank, c_regular, c_iter, c_alpha in tqdm(itertools.product(
+            SETTINGS.als.ranks, SETTINGS.als.regular, SETTINGS.als.iters, SETTINGS.als.alpha
+        )):
+            model = ALS.trainImplicit(self.rdd_training, c_rank, c_iter, float(c_regular), alpha=float(c_alpha))
+            predictions = model.predictAll(self.rdd_validating_no_ratings).map(lambda p: ((p[0], p[1]), p[2]))
+            dist = get_rmse(self.rdd_validating_with_ratings, self.nb_validating, predictions)
+            if dist < final_dist:
+                logger.info(
+                    'c_iter: {0} c_rank: {1} c_alpha: {2} c_regular: {3}'.format(c_iter, c_rank, c_alpha, c_regular))
+                logger.info('Best so far:{0}'.format(dist))
+                final_rank = c_rank
+                final_regular = c_regular
+                final_iter = c_iter
+                final_dist = dist
+                final_alpha = c_alpha
+            del model, predictions
+            gc.collect()
+
+        self.parameters = {
+            'rank': final_rank,
+            'regular': final_regular,
+            'iter': final_iter,
+            'alpha': final_alpha,
+            'dist': final_dist,
+        }
+
+    def tune_als(self):
+
+        if self.trim_dataset:
+            self.scores_dataframe = self.scores_dataframe.sample(
+                withReplacement=False,
+                fraction=self.sample_size / self.scores_dataframe.count(),
+                seed=self.seed
+            )
+
+        self.rdd_training, rdd_validating = self.scores_dataframe.randomSplit([6, 4], seed=1001)
+        self.rdd_validating_no_ratings = rdd_validating.map(lambda x: (int(x[0]), int(x[1])))
+        self.rdd_validating_with_ratings = rdd_validating.map(lambda x: ((int(x[0]), int(x[1])), float(x[2])))
+
+        self.nb_validating = rdd_validating.count()
+
+        logger.info('Training: {0}, validation: {1}'.format(self.rdd_training.count(), self.nb_validating))
+
+        self.find_parameters()
+
+        logger.info('Best parameters {0}'.format(self.parameters))
+
+        self.dataset.write_best_parameters(**self.parameters, filename=self.params_file_name)
+
+
+if __name__ == '__main__':
+
+    conf = SparkConf().setAppName('{0} - Recommender'.format(SETTINGS.spark.app_name)).setMaster(SETTINGS.spark.master)
+    sc = SparkContext(conf=conf)
+
+    tuner = AlsTuner(
+        spark_context=sc,
+        dataset=FileDataSet(sc, SETTINGS.base_dir),
+        trim_dataset=SETTINGS.spark.trim_train_dataset,
+        sample_size=SETTINGS.sample_size,
+        seed=SETTINGS.seed,
+        params_file_name=SETTINGS.als.model_params_file_name,
+        filename=SETTINGS.file_rating_path,
+    )
+
+    tuner.tune_als()
+
+    sc.stop()
+
+
+
+
