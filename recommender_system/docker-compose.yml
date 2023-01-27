@@ -55,7 +55,6 @@ services:
       - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
     expose:
       - ${SPARK_MASTER_WEB_PORT}
@@ -79,7 +78,6 @@ services:
     hostname: spark-worker01
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
 
   spark-worker02:
@@ -89,7 +87,6 @@ services:
     hostname: spark-worker02
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
 
   spark-worker03:
@@ -99,7 +96,6 @@ services:
     hostname: spark-worker03
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
 
   jupyter-notebook:
@@ -112,10 +108,9 @@ services:
         condition: service_healthy
     volumes:
       - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - ./jupyter-notebook/work:/home/jovyan/work
+      - ./jupyter-notebook/work:/home/developer/work
     profiles:
       - dev_recom
-      - dev_graduate
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
