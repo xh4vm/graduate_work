@@ -11,7 +11,7 @@ from bson.timestamp import Timestamp
 from loguru import logger
 from pymongo.errors import ServerSelectionTimeoutError
 
-from src.core.config import BACKOFF_MAX_TRIES
+from src.core.config import SETTINGS
 
 
 class DateEncoder(json.JSONEncoder):
@@ -60,7 +60,7 @@ def test_connection(func):
     @backoff.on_exception(
         backoff.expo,
         ServerSelectionTimeoutError,
-        max_tries=BACKOFF_MAX_TRIES,
+        max_tries=SETTINGS.backoff_max_tries,
         on_giveup=fatal_error,
     )
     @wraps(func)
