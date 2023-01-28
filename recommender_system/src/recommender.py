@@ -1,3 +1,4 @@
+from engine.spark import spark_manager
 from src.core.config import SETTINGS
 
 from pyspark.sql import SparkSession
@@ -6,7 +7,6 @@ from pyspark.mllib.recommendation import ALS
 from pyspark.sql.functions import desc
 
 from src.db.source.file_data_source import FileDataSet
-from src.db.receiver.mongodb.mongodb import mdb
 
 
 class AlsRecommender:
@@ -24,16 +24,18 @@ class AlsRecommender:
         self,
         spark_session: SparkSession,
         scores_dataframe: RDD,
+        rank: int,
+        _iter: int,
+        regular: float,
+        alpha: float,
         trim_dataset: bool = False,
-        sample_size: int | None = None
+        sample_size: int | None = None,
     ):
         self.spark = spark_session
         self.sc = spark_session.sparkContext
         self.scores_dataframe = scores_dataframe
         self.trim_dataset = trim_dataset
         self.sample_size = sample_size
-
-    def set_model_params(self, rank: int, _iter: int, regular: float, alpha: float):
         self.rank = rank
         self.iter = _iter
         self.regular = regular
@@ -48,7 +50,7 @@ class AlsRecommender:
 
         predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
-    def make_recommendations(self):
+    def prepare_recommendations(self):
 
         if self.trim_dataset:
             sample_size = SETTINGS.sample_size
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         '{0} - Recommender'.format(SETTINGS.spark.app_name)
     )
 
-    spark_s = mdb.init_spark(
+    spark_s = spark_manager.init_spark(
         spark_b,
         connect_string=SETTINGS.mongo.connect_string,
         db_name=SETTINGS.mongo.databases['db_data'],
@@ -92,17 +94,14 @@ if __name__ == '__main__':
     recommender = AlsRecommender(
         spark_s,
         FileDataSet(sc, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path),
-        SETTINGS.spark.trim_train_dataset,
-        SETTINGS.sample_size
-    )
-
-    recommender.set_model_params(
         rank=SETTINGS.als.params['rank'],
         _iter=SETTINGS.als.params['iter'],
         regular=float(SETTINGS.als.params['regular']),
-        alpha=float(SETTINGS.als.params['alpha'])
+        alpha=float(SETTINGS.als.params['alpha']),
+        trim_dataset=SETTINGS.spark.trim_train_dataset,
+        sample_size=SETTINGS.sample_size,
     )
 
-    recommender.make_recommendations()
+    recommender.prepare_recommendations()
 
     spark_s.stop()

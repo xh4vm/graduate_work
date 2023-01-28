@@ -19,7 +19,7 @@ if not SETTINGS.spark.master:
 
 ratings_file = os.path.join(SETTINGS.base_dir, SETTINGS.als.model_params_file_name)
 
-SETTINGS.als.params = get_data_from_json(ratings_file) if os.path.exists(ratings_file) else {
+SETTINGS.als.final_parameters = get_data_from_json(ratings_file) if os.path.exists(ratings_file) else {
     'rank': 5,
     'regular': 0.1,
     'iter': 5,

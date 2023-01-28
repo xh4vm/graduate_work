@@ -4,11 +4,6 @@ from pyspark.sql import SparkSession
 
 class AsyncDBStorage(ABC):
 
-    @classmethod
-    @abstractmethod
-    def init_spark(cls, spark_builder: SparkSession.Builder, *args, **kwargs) -> SparkSession.Builder:
-        pass
-
     @abstractmethod
     async def exec_command(self, db_name: str, command: dict, *args, **kwargs):
         pass

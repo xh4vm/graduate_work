@@ -13,19 +13,6 @@ class AsyncMongoDB(AsyncDBStorage):
     def __init__(self):
         self.cl: AsyncIOMotorClient | None = None
 
-    @classmethod
-    def init_spark(cls, spark_builder: SparkSession.Builder, *args, **kwargs) -> SparkSession.Builder:
-        spark_builder = spark_builder.config(
-            'spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1'
-        ).config(
-            'spark.mongodb.output.uri', kwargs['connect_string']
-        ).config(
-            'spark.mongodb.output.database', kwargs['db_name']
-        ).config(
-            'spark.mongodb.output.collection', kwargs['collection_name']
-        )
-        return spark_builder
-
     def init_db(self, db_name):
         self.db = self.cl[db_name]
 
@@ -99,6 +86,6 @@ mdb = AsyncMongoDB()
 
 
 async def get_mongodb() -> AsyncMongoDB:
-    """ Get elasticsearch object. """
+    """ Get mongodb object. """
 
     return mdb

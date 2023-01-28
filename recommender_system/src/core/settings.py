@@ -34,11 +34,11 @@ class MongoSettings(BaseSettings):
 
 class AlsSettings(BaseSettings):
     model_params_file_name: str = 'best_model_params.json'
-    ranks = [5, 10, 15, 20]
-    regular = [0.1, 1, 10]
-    iters = [5, 10, 20]
-    alpha = [10, 20, 40]
-    params: dict = None
+    rank = (5, 10, 15, 20)
+    regular = (0.1, 1.0, 10.0)
+    iter = (5, 10, 20)
+    alpha = (10.0, 20.0, 40.0)
+    final_parameters: dict = None
 
     class Config:
         env_prefix = 'ALS_'
