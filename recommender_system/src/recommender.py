@@ -1,5 +1,5 @@
-from src.engine.spark import spark_manager_source
-from src.engine.spark import spark_manager_receiver
+from src.db.source.clickhouse import ClickHouseDataSet
+from src.engine.spark import SparkManager
 from src.core.config import SETTINGS
 
 from pyspark.sql import SparkSession
@@ -77,24 +77,20 @@ class AlsRecommender:
 
 if __name__ == '__main__':
 
-    spark_b = SparkSession.builder.master(SETTINGS.spark.master).appName(
-        '{0} - Recommender'.format(SETTINGS.spark.app_name)
+    spark = SparkManager(master=SETTINGS.spark.master, app_name='{0} - Recommender'.format(SETTINGS.spark.app_name))
+
+    spark_s = spark.init_spark(SETTINGS.spark.config_list)
+
+    # spark_s.sparkContext.setLogLevel('WARN')
+
+    clickhouse_source = ClickHouseDataSet(
+        session=spark_s,
+        properties=SETTINGS.clickhouse,
     )
-
-    spark_s = spark_manager_receiver.init_spark(
-        spark_b,
-        connect_string=SETTINGS.mongo.connect_string,
-        db_name=SETTINGS.mongo.databases['db_data'],
-        collection_name=SETTINGS.mongo.collection,
-    ).getOrCreate()
-
-    sc = spark_s.sparkContext
-
-    sc.setLogLevel('WARN')
 
     recommender = AlsRecommender(
         spark_s,
-        FileDataSet(sc, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path),
+        clickhouse_source.get_data(),
         rank=SETTINGS.als.params['rank'],
         _iter=SETTINGS.als.params['iter'],
         regular=float(SETTINGS.als.params['regular']),

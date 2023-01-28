@@ -32,4 +32,11 @@ SETTINGS.clickhouse.query = get_data_from_file(
     os.path.join(SETTINGS.base_dir, SETTINGS.clickhouse.query_file_path)
 )
 
+SETTINGS.spark.config_list = (
+    ('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar'),
+    ('spark.mongodb.output.uri', SETTINGS.mongo.connect_string),
+    ('spark.mongodb.output.database', SETTINGS.mongo.databases['db_data']),
+    ('spark.mongodb.output.collection', SETTINGS.mongo.collection),
+)
+
 pass

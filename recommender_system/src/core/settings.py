@@ -12,6 +12,7 @@ class SparkSettings(BaseSettings):
     master_port: int
     app_name: str
     trim_train_dataset: bool = True
+    config_list: list = None
 
     class Config:
         env_prefix = 'SPARK_'
