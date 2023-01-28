@@ -9,7 +9,7 @@ packages = []
 [tool.poetry.dependencies]
 python = "^3.10"
 
-[tool.poetry.group.recomm.dependencies]
+[tool.poetry.group.recom.dependencies]
 pyspark = "3.3.1"
 tqdm = "4.64.1"
 python-dotenv = "0.21.1"

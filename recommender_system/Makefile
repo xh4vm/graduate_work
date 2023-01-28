@@ -115,8 +115,12 @@ ch-benchmark:
 mongo: run_containers
 
 .PHONY: interactive build mongo cluster
-mongo_cfg: config_cluster create_recommendations_coll
+mongo_cfg: config_cluster poetry-install-recom create_recommendations_coll
 
+.PHONY: potery install recom to venv
+poetry-install-recom:
+	$(call log,Poetry installing packages)
+	poetry install --only recom
 
 .PHONY: run install dependencies in spark cluster
 spark_dep: spark_install_dependencies
@@ -152,21 +156,3 @@ create_recommendations_coll:
 	$(call log,Create collections)
 	export PYTHONPATH=${PWD}; \
 poetry run python src/db/receiver/mongodb/create_collections.py
-
-
-.PHONY: install dependencies
-spark_install_dependencies:
-	$(call log,Install dependencies)
-	docker exec -it spark-master bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker01 bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker02 bash -c 'pip install -r /work/requirements.txt'
-	docker exec -it spark-worker03 bash -c 'pip install -r /work/requirements.txt'
-
-
-.PHONY: get params for recommendations model
-params_recom:
-	export PYTHONPATH=${PWD}; src/train_model.py
-
-.PHONY: make recommendations
-make_recom:
-	export PYTHONPATH=${PWD}; src/recommender.py'
