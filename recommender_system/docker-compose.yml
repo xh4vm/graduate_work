@@ -7,6 +7,26 @@ x-base-service: &base_service
   networks:
     - recommended
 
+x-spark-worker: &base_spark_worker
+  image: docker.io/bitnami/spark:3.0.1
+  restart: on-failure
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+    - ./spark/.data:/opt/bitnami/spark/work/
+  depends_on:
+    spark-master:
+      condition: service_healthy
+  environment:
+    - SPARK_MODE=worker
+    - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+    - SPARK_WORKER_MEMORY=2G
+    - SPARK_WORKER_CORES=1
+    - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    - SPARK_RPC_ENCRYPTION_ENABLED=no
+    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    - SPARK_SSL_ENABLED=no
+
 services:
   nginx:
     <<: *base_service
@@ -27,19 +47,24 @@ services:
 
   spark-master:
     <<: *base_service
-    image: bitnami/spark:3.2.3-debian-11-r19
+    image: docker.io/bitnami/spark:3.0.1
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
+    volumes:
+      - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
     expose:
       - ${SPARK_MASTER_WEB_PORT}
       - ${SPARK_MASTER_PORT}
     environment:
       - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
     healthcheck:
       test: curl http://spark-master:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
@@ -48,69 +73,44 @@ services:
 
   spark-worker01:
     <<: *base_service
-    image: bitnami/spark:3.2.3-debian-11-r19
+    <<: *base_spark_worker
     container_name: spark-worker01
     hostname: spark-worker01
-    restart: on-failure
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
-    depends_on:
-      spark-master:
-        condition: service_healthy
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
 
   spark-worker02:
     <<: *base_service
-    image: bitnami/spark:3.2.3-debian-11-r19
+    <<: *base_spark_worker
     container_name: spark-worker02
     hostname: spark-worker02
-    restart: on-failure
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
-    depends_on:
-      spark-master:
-        condition: service_healthy
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
 
   spark-worker03:
     <<: *base_service
-    image: bitnami/spark:3.2.3-debian-11-r19
+    <<: *base_spark_worker
     container_name: spark-worker03
     hostname: spark-worker03
-    restart: on-failure
     profiles:
       - dev_recom
-      - dev_graduate
       - prod
-    depends_on:
-      spark-master:
-        condition: service_healthy
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
-
 
   jupyter-notebook:
     <<: *base_service
-    image: jupyter/pyspark-notebook:java-17.0.5
+    build: ./jupyter-notebook/
     container_name: jupyter-notebook
     hostname: jupyter-notebook
     depends_on:
       spark-master:
         condition: service_healthy
     volumes:
-      - ./jupyter-notebook/work:/home/jovyan/work
+      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./jupyter-notebook/work:/home/developer/work
     profiles:
       - dev_recom
-      - dev_graduate
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
