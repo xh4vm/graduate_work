@@ -9,7 +9,3 @@ class DataSet(ABC):
     @abstractmethod
     def get_data(self, *args, **kwargs) -> RDD:
         pass
-
-    @abstractmethod
-    def write_best_parameters(self, parameters: dict, *args, **kwargs):
-        pass

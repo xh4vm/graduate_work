@@ -159,6 +159,7 @@ services:
 
 networks:
   recommended:
-    name: recommender_system_recommended
+    name: graduate_work_graduate
+#    name: recommender_system_recommended
     external: true
 

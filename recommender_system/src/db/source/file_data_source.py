@@ -24,10 +24,3 @@ class FileDataSet(DataSet):
 
         return ratings_data
 
-    def write_best_parameters(self, parameters, *args, **kwargs):
-
-        parameters_file = os.path.join(self.dataset_folder_path, kwargs['filename'])
-        json_string = json.dumps(parameters)
-
-        with open(parameters_file, 'w') as outfile:
-            outfile.write(json_string)

@@ -19,6 +19,20 @@ class SparkSettings(BaseSettings):
         env_file_encoding = 'utf-8'
 
 
+class ClickhouseSettings(BaseSettings):
+    url: str
+    user: str
+    password: str = ''
+    driver = 'com.github.housepower.jdbc.ClickHouseDriver'
+    query_file_path: str
+    query: str = None
+
+    class Config:
+        env_prefix = 'CLICKHOUSE_'
+        env_file = Path(BASE_DIR, '.env')
+        env_file_encoding = 'utf-8'
+
+
 class MongoSettings(BaseSettings):
     connect_string: str
     databases: dict
@@ -34,6 +48,7 @@ class MongoSettings(BaseSettings):
 
 class AlsSettings(BaseSettings):
     model_params_file_name: str = 'best_model_params.json'
+    model_params_file_path: str = None
     rank = (5, 10, 15, 20)
     regular = (0.1, 1.0, 10.0)
     iter = (5, 10, 20)
@@ -51,6 +66,7 @@ class Settings(BaseSettings):
     root_dir = ROOT_DIR
     base_dir = BASE_DIR
     spark = SparkSettings().parse_obj(SparkSettings().dict())
+    clickhouse = ClickhouseSettings().parse_obj(ClickhouseSettings().dict())
     mongo = MongoSettings().parse_obj(MongoSettings().dict())
     als = AlsSettings().parse_obj(AlsSettings().dict())
     sample_size = 100000

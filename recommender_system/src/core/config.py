@@ -4,7 +4,7 @@ from os import environ
 from dotenv import load_dotenv
 from pathlib import Path
 
-from src.utilities.file_utilities import get_data_from_json
+from src.utilities.file_utilities import get_data_from_json, get_data_from_file
 from src.core.settings import Settings
 
 
@@ -26,5 +26,10 @@ SETTINGS.als.final_parameters = get_data_from_json(ratings_file) if os.path.exis
     'alpha': 10,
 }
 
+SETTINGS.als.model_params_file_path = os.path.join(SETTINGS.base_dir, SETTINGS.als.model_params_file_name)
+
+SETTINGS.clickhouse.query = get_data_from_file(
+    os.path.join(SETTINGS.base_dir, SETTINGS.clickhouse.query_file_path)
+)
 
 pass

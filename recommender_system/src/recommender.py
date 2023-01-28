@@ -1,4 +1,5 @@
-from engine.spark import spark_manager
+from src.engine.spark import spark_manager_source
+from src.engine.spark import spark_manager_receiver
 from src.core.config import SETTINGS
 
 from pyspark.sql import SparkSession
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         '{0} - Recommender'.format(SETTINGS.spark.app_name)
     )
 
-    spark_s = spark_manager.init_spark(
+    spark_s = spark_manager_receiver.init_spark(
         spark_b,
         connect_string=SETTINGS.mongo.connect_string,
         db_name=SETTINGS.mongo.databases['db_data'],

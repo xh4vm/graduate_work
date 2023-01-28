@@ -27,10 +27,14 @@ class SparkMongoDB(SparkOutput):
         return spark_builder
 
 
-spark_manager = SparkMongoDB()
+class SparkClickHouse(SparkOutput):
+
+    @classmethod
+    @abstractmethod
+    def init_spark(cls, spark_builder: SparkSession.Builder, *args, **kwargs) -> SparkSession.Builder:
+        spark_builder = spark_builder.config('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar')
+        return spark_builder
 
 
-async def get_mongodb() -> SparkMongoDB:
-    """ Get spark object. """
-
-    return spark_manager
+spark_manager_receiver = SparkMongoDB()
+spark_manager_source = SparkClickHouse()

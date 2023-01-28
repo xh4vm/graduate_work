@@ -11,6 +11,8 @@ from pyspark.mllib.recommendation import ALS
 from src.metrics import get_rmse
 from pydantic import BaseModel
 
+from src.utilities.file_utilities import write_best_parameters
+
 
 class AlsTuner:
 
@@ -34,7 +36,7 @@ class AlsTuner:
         regular: tuple
         alpha: tuple
         final_parameters: dict = None
-        model_params_file_name: str
+        model_params_file_path: str
 
     sc: SparkContext
     data_params: AlsTunerParamsData
@@ -132,9 +134,9 @@ class AlsTuner:
 
         self.find_parameters()
 
-        logger.info('Best parameters {0}'.format(self.parameters))
+        logger.info('Best parameters {0}'.format(self.als_params.final_parameters))
 
-        self.data_params.dataset.write_best_parameters(**self.parameters, filename=self.als_params.params_file_name)
+        write_best_parameters(**self.als_params.final_parameters, file_path=self.als_params.model_params_file_path)
 
 
 if __name__ == '__main__':
