@@ -143,3 +143,5 @@ commands.md
 .env_local
 backend/auth/api/migrations
 /recommender_system/jupyter-notebook/work/
+
+.data
