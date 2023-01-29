@@ -135,6 +135,8 @@ services:
     command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
     expose:
       - "27017"
+    ports:
+      - "27017:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     profiles: 
@@ -152,6 +154,8 @@ services:
     command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
     expose:
       - "27017"
+    ports:
+      - "27017:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     profiles: 
