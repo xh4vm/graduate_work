@@ -90,10 +90,10 @@ if __name__ == '__main__':
     recommender = AlsRecommender(
         spark_s,
         data_rdd,
-        rank=SETTINGS.als.rank,
-        _iter=SETTINGS.als.iter,
-        regular=float(SETTINGS.als.regular),
-        alpha=float(SETTINGS.als.alpha),
+        rank=SETTINGS.als.final_parameters['rank'],
+        _iter=SETTINGS.als.final_parameters['iter'],
+        regular=float(SETTINGS.als.final_parameters['regular']),
+        alpha=float(SETTINGS.als.final_parameters['alpha']),
         trim_dataset=SETTINGS.spark.trim_train_dataset,
         sample_size=SETTINGS.sample_size,
     )
