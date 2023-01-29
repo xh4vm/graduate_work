@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     tuner = AlsTuner(
         spark_context=sc,
-        dataset=data_rdd,
+        income_data=data_rdd,
         trim_dataset=SETTINGS.spark.trim_train_dataset,
         als_params=SETTINGS.als,
         sample_size=SETTINGS.sample_size,
