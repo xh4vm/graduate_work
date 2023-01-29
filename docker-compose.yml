@@ -52,6 +52,7 @@ x-spark-worker: &base_spark_worker
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
+    - ./recommender_system:/opt/work
   depends_on:
     spark-master:
       condition: service_healthy
