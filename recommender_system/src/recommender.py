@@ -15,7 +15,7 @@ class AlsRecommender:
     sc: SparkContext
     scores_dataframe: RDD
     trim_dataset: bool
-    sample_size: int | None
+    sample_size: int = None
     rank: int = 5
     iter: int = 5
     regular: float = 0.1
@@ -30,7 +30,7 @@ class AlsRecommender:
         regular: float,
         alpha: float,
         trim_dataset: bool = False,
-        sample_size: int | None = None,
+        sample_size: int = None,
     ):
         self.spark = spark_session
         self.sc = spark_session.sparkContext
