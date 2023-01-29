@@ -17,7 +17,6 @@ from src.utilities.file_utilities import write_best_parameters
 class AlsTuner:
 
     class AlsTunerParamsData(BaseModel):
-        dataset: DataSet
         scores_dataframe: RDD
         trim_dataset: bool
         sample_size: int = None
@@ -45,7 +44,7 @@ class AlsTuner:
     def __init__(
         self,
         spark_context: SparkContext,
-        dataset: DataSet,
+        income_data: RDD,
         seed: int,
         als_params: AlsSettings,
         trim_dataset: bool = False,
@@ -55,8 +54,7 @@ class AlsTuner:
 
         self.sc = spark_context
         self.data_params = self.AlsTunerParamsData(
-            dataset=dataset,
-            scores_dataframe=dataset.get_data(filename=kwargs['filename']),
+            scores_dataframe=income_data,
             trim_dataset=trim_dataset,
             sample_size=sample_size,
             seed=seed
@@ -143,14 +141,17 @@ if __name__ == '__main__':
     conf = SparkConf().setAppName('{0} - Recommender'.format(SETTINGS.spark.app_name)).setMaster(SETTINGS.spark.master)
     sc = SparkContext(conf=conf)
 
+    # data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+
+    data_rdd = FileDataSet(sc, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
+
     tuner = AlsTuner(
         spark_context=sc,
-        dataset=FileDataSet(sc, SETTINGS.base_dir),
+        dataset=data_rdd,
         trim_dataset=SETTINGS.spark.trim_train_dataset,
         als_params=SETTINGS.als,
         sample_size=SETTINGS.sample_size,
         seed=SETTINGS.seed,
-        filename=SETTINGS.file_rating_path,
     )
 
     tuner.tune_als()

@@ -81,16 +81,15 @@ if __name__ == '__main__':
 
     spark_s = spark.init_spark(SETTINGS.spark.config_list)
 
-    # spark_s.sparkContext.setLogLevel('WARN')
+    spark_s.sparkContext.setLogLevel('WARN')
 
-    clickhouse_source = ClickHouseDataSet(
-        session=spark_s,
-        properties=SETTINGS.clickhouse,
-    )
+    # data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+
+    data_rdd = FileDataSet(spark_s.sparkContext, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
 
     recommender = AlsRecommender(
         spark_s,
-        clickhouse_source.get_data(),
+        data_rdd,
         rank=SETTINGS.als.params['rank'],
         _iter=SETTINGS.als.params['iter'],
         regular=float(SETTINGS.als.params['regular']),
