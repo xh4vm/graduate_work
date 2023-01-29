@@ -20,7 +20,7 @@ class AlsTuner:
         dataset: DataSet
         scores_dataframe: RDD
         trim_dataset: bool
-        sample_size: int | None
+        sample_size: int = None
         nb_validating: int = None
         rdd_validating_with_ratings: RDD = None
         rdd_validating_no_ratings: RDD = None
@@ -49,7 +49,7 @@ class AlsTuner:
         seed: int,
         als_params: AlsSettings,
         trim_dataset: bool = False,
-        sample_size: int | None = None,
+        sample_size: int = None,
         **kwargs
     ):
 
