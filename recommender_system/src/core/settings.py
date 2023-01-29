@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     clickhouse = ClickhouseSettings().parse_obj(ClickhouseSettings().dict())
     mongo = MongoSettings().parse_obj(MongoSettings().dict())
     als = AlsSettings().parse_obj(AlsSettings().dict())
-    sample_size = 100000
+    sample_size = 1000
     seed = 1001
     backoff_max_tries = 3
     file_rating_path = 'jupyter-notebook/work/ratings.csv'
