@@ -72,7 +72,6 @@ class AlsTuner:
         final_iter = -1
         final_dist = float(300)
         final_alpha = float(0)
-
         for c_rank, c_regular, c_iter, c_alpha in tqdm(itertools.product(
             self.als_params.rank, self.als_params.regular, self.als_params.iter, self.als_params.alpha
         )):
