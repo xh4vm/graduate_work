@@ -14,7 +14,7 @@ def ch_conn_is_alive(ch_conn: Clickhouse) -> bool:
         return False
 
 
-class ClickhouseIniter:
+class ClickhouseClient:
     def __init__(self, host: str, port: int, conn: Optional[Clickhouse] = None) -> None:
         self._conn: Clickhouse = conn
         self._host: str = host

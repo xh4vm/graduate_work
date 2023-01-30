@@ -227,6 +227,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./backend/clickhouse_initer/mapping:/opt/clickhouse_initer/mapping:ro
+      - ./backend/clickhouse_initer/data:/opt/clickhouse_initer/data:ro
     depends_on:
       clickhouse-node1:
         condition: service_healthy

@@ -5,7 +5,10 @@ from pydantic import BaseSettings, Field
 
 
 class ClickhouseSettings(BaseSettings):
-    NODES: str = Field(..., env='CH_NODES')
+    NODES: str
+    INIT_TABLE: str
+    INIT_DATA: bool = Field(False, env='CH_INIT_DATA')
+    INIT_DATA_PATH: str | None = Field(..., env='CH_INIT_DATA_PATH')
 
     @classmethod
     def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
