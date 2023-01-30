@@ -46,11 +46,15 @@
                         <default_database from_env="CH_DB_NAME" />
                         <host>clickhouse-node1</host>
                         <port>9000</port>
+                        <user from_env='CH_USER'></user>
+                        <password from_env='CH_PASSWORD'></password>
                     </replica>
                     <replica>
                         <default_database from_env="CH_REPLICA_DB_NAME" />
                         <host>clickhouse-node2</host>
                         <port>9000</port>
+                        <user from_env='CH_USER'></user>
+                        <password from_env='CH_PASSWORD'></password>
                     </replica>
                 </shard>
                 <shard>
@@ -58,11 +62,15 @@
                         <default_database from_env="CH_DB_NAME" />
                         <host>clickhouse-node3</host>
                         <port>9000</port>
+                        <user from_env='CH_USER'></user>
+                        <password from_env='CH_PASSWORD'></password>
                     </replica>
                     <replica>
                         <default_database from_env="CH_REPLICA_DB_NAME" />
                         <host>clickhouse-node4</host>
                         <port>9000</port>
+                        <user from_env='CH_USER'></user>
+                        <password from_env='CH_PASSWORD'></password>
                     </replica>
                 </shard>
             </main_cluster>
