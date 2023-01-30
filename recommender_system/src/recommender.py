@@ -43,14 +43,15 @@ class AlsRecommender:
         self.alpha = alpha
 
     def save_recommendations(self, predictions: RDD):
+
         predictions_df = self.spark.createDataFrame(predictions).withColumnRenamed(
             'user', 'user_id'
         ).withColumnRenamed(
             'product', 'film_id'
         ).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
 
-        predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
-        # predictions_df.write.format("mongodb").mode("append").save()
+        # predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
+        predictions_df.write.format("mongodb").mode("append").save()
 
     def prepare_recommendations(self):
 

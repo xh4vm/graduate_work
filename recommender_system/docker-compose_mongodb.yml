@@ -136,7 +136,7 @@ services:
     expose:
       - "27017"
     ports:
-      - "27017:27017"
+      - "27097:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     profiles: 
@@ -155,7 +155,7 @@ services:
     expose:
       - "27017"
     ports:
-      - "27017:27017"
+      - "27097:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     profiles: 
