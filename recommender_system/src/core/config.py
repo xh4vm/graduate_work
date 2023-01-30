@@ -36,6 +36,7 @@ SETTINGS.spark.config_list = (
     # ('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar, '
     #                '/opt/mongo-spark-connector_2.12:3.0.1.jar'),
     # ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector:10.1.0'),
+    ('spark.jars.packages', 'mongodb-driver-sync-4.8.1'),
     ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1'),
     # ('spark.mongodb.write.connection.uri', SETTINGS.mongo.connect_string),
     ('spark.mongodb.output.uri', SETTINGS.mongo.connect_string),
