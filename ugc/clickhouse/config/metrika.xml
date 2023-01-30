@@ -103,13 +103,7 @@
         </profiles>
 
         <users>
-            <default>
-                <password></password>
-                <profile>default</profile>
-                <networks>
-                    <ip>::/0</ip>
-                </networks>
-                <quota>default</quota>
+            <default remove="remove">
             </default>
         </users>
 

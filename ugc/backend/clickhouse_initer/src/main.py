@@ -12,14 +12,16 @@ if __name__ == '__main__':
     for NODE in NODES:
         logger.info('[*] Start creating mapping')
 
-        ch_initer = ClickhouseClient(host=NODE.HOST, port=NODE.PORT)
+        ch_initer = ClickhouseClient(host=NODE.HOST, port=NODE.PORT,
+            user='user', password='password')
         ch_initer.create(ddl_file=f'./mapping/{NODE.SCHEMA_NAME}')
 
     if CLICKHOUSE_CONFIG.INIT_DATA and CLICKHOUSE_CONFIG.INIT_DATA_PATH is not None:
         logger.info('[*] Start init data')
         logger.info('[*] Connecting into clickhouse')
         
-        client = ClickhouseClient(host=NODES[0].HOST, port=NODES[0].PORT)
+        client = ClickhouseClient(host=NODES[0].HOST, port=NODES[0].PORT,
+            user='user', password='password')
     
         extractor = CSVExtractor(file_path=CLICKHOUSE_CONFIG.INIT_DATA_PATH, headers=['user_id', 'movie_id', 'rating'])
         transformer = MovieFrameTransformer()
