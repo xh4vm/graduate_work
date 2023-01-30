@@ -50,8 +50,8 @@ class AlsRecommender:
             'product', 'film_id'
         ).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
 
-        # predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
-        predictions_df.write.format("mongodb").mode("append").save()
+        predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
+        # predictions_df.write.format("mongodb").mode("append").save()
 
     def prepare_recommendations(self):
 
