@@ -54,7 +54,7 @@ x-spark-worker: &base_spark_worker
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system:/opt/work
     - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-    - ./recommender_system/src/core/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar:/opt/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar
+    - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
   depends_on:
     spark-master:
       condition: service_healthy
@@ -319,7 +319,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - ./recommender_system/src/core/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar:/opt/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar
+      - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
       - ./recommender_system:/opt/work
 
     profiles:
