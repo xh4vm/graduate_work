@@ -8,11 +8,12 @@ x-base-service: &base_service
     - recommended
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.0.1
+  image: docker.io/bitnami/spark:3.3.1
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
-    - /etc/timezone:/etc/timezone:ro
+#    - /etc/timezone:/etc/timezone:ro
+    - .:/opt/work
     - ./spark/.data:/opt/bitnami/spark/work/
   depends_on:
     spark-master:
@@ -47,12 +48,13 @@ services:
 
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.0.1
+    image: docker.io/bitnami/spark:3.3.1
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
     volumes:
       - ./spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - .:/opt/work
     profiles:
       - dev_recom
       - dev_graduate
@@ -101,7 +103,8 @@ services:
 
   jupyter-notebook:
     <<: *base_service
-    build: ./jupyter-notebook/
+#    build: ./jupyter-notebook/
+    image: jupyter/pyspark-notebook:java-17.0.5
     container_name: jupyter-notebook
     hostname: jupyter-notebook
     depends_on:
@@ -110,6 +113,8 @@ services:
     volumes:
       - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
       - ./jupyter-notebook/work:/home/developer/work
+      - .:/opt/work
+      - ./jupyter-notebook/work:/home/jovyan/work
     profiles:
       - dev_recom
     ports:
