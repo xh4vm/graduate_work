@@ -62,6 +62,8 @@ class AlsRecommender:
         else:
             scores_data = self.scores_dataframe
 
+        del self.scores_dataframe
+
         data_no_scores = scores_data.map(lambda x: (int(x[0]), int(x[1])))
 
         model = ALS.trainImplicit(
@@ -73,6 +75,8 @@ class AlsRecommender:
         )
 
         predictions = model.predictAll(data_no_scores)
+
+        del model, data_no_scores
 
         self.save_recommendations(predictions)
 
