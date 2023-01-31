@@ -112,7 +112,6 @@ services:
         condition: service_healthy
     volumes:
       - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - ./jupyter-notebook/work:/home/developer/work
       - .:/opt/work
       - ./jupyter-notebook/work:/home/jovyan/work
     profiles:
