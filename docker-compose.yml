@@ -46,7 +46,7 @@ x-base-kafka: &base_kafka
   command: "bash -c 'if [ ! -f /tmp/start.sh ]; then echo \"ERROR: Did you forget the start.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/start.sh && /etc/confluent/docker/run ; fi'"
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.0.1
+  image: docker.io/bitnami/spark:3.3.1
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
@@ -311,7 +311,7 @@ services:
 
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.0.1
+    image: docker.io/bitnami/spark:3.3.1
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
@@ -369,7 +369,8 @@ services:
     
   jupyter-notebook:
     <<: *base_service
-    build: ./recommender_system/jupyter-notebook/
+#    build: ./recommender_system/jupyter-notebook/
+    image: jupyter/pyspark-notebook:java-17.0.5
     container_name: jupyter-notebook
     hostname: jupyter-notebook
     depends_on:
@@ -380,7 +381,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/jupyter-notebook/work:/home/developer/work
       - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - ./recommender_system/src/core/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar:/opt/org.mongodb.spark_mongo-spark-connector_2.12-3.0.1.jar
+      - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
     profiles:
       - dev_graduate
     ports:

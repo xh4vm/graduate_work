@@ -33,27 +33,11 @@ SETTINGS.clickhouse.query = get_data_from_file(
 )
 
 SETTINGS.spark.config_list = (
-    # ('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar, '
-    #                '/opt/mongo-spark-connector_2.12:3.0.1.jar'),
-    # ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector:10.1.0'),
-    # ('spark.jars.packages', 'junit-4.12'),
-    # ('spark.jars.packages', 'junit-interface-0.11'),
-    # ('spark.jars.packages', 'mongodb-driver-core-3.4.2'),
-    # ('spark.jars.packages', 'mongo-java-driver-3.4.2'),
-    # ('spark.jars.packages', 'scalacheck_2.12-1.14.0'),
-    # ('spark.jars.packages', 'scala-library-2.12.11'),
-    # ('spark.jars.packages', 'scalamock-scalatest-support_2.12-3.6.0'),
-    # ('spark.jars.packages', 'scalatest_2.12-3.0.5'),
-    # ('spark.jars.packages', 'mongodb-driver-sync-4.8.1'),
+    ('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar'),
     ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1'),
-    # ('spark.mongodb.write.connection.uri', SETTINGS.mongo.connect_string),
     ('spark.mongodb.output.uri', SETTINGS.mongo.connect_string),
-    # ('spark.mongodb.write.database', SETTINGS.mongo.databases['db_data']),
     ('spark.mongodb.output.database', SETTINGS.mongo.databases['db_data']),
-    # ('spark.mongodb.write.collection', SETTINGS.mongo.collection),
     ('spark.mongodb.output.collection', SETTINGS.mongo.collection),
 )
-
-
 
 pass
