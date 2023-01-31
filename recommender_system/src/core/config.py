@@ -33,10 +33,10 @@ SETTINGS.clickhouse.query = get_data_from_file(
 )
 
 SETTINGS.spark.config_list = (
-    ('spark.executor.memory', '2g'),
-    ('spark.driver.memory', '2g'),
-    ('spark.executor.extraJavaOptions', '-Xss32m'),
-    ('spark.driver.extraJavaOptions', '-Xss32m'),
+    ('spark.executor.memory', '4g'),
+    ('spark.driver.memory', '4g'),
+    ('spark.executor.extraJavaOptions', '-Xss512m'),
+    ('spark.driver.extraJavaOptions', '-Xss512m'),
     ('spark.jars', '/opt/work/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar'),
     ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2'),
     ('spark.mongodb.output.uri', SETTINGS.mongo.connect_string),
