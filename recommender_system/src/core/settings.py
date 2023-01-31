@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     sample_size = 1000
     seed = 1001
     backoff_max_tries = 3
-    file_rating_path = 'jupyter-notebook/work/ratings.csv'
+    file_rating_path = 'jupyter-notebook/work/ratings_100.csv'
 
     class Config:
         env_prefix = 'PROJECT_'
