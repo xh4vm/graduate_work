@@ -34,6 +34,15 @@ PARTITION BY toYYYYMMDD(created_at)
 ORDER BY (id);
 
 
+CREATE TABLE IF NOT EXISTS movies.movie_meta
+(
+    id                      UUID,
+    duration                Int64
+)
+Engine=ReplicatedReplacingMergeTree('/clickhouse/tables/shard1/movie_meta', 'replica2')
+ORDER BY (id);
+
+
 CREATE MATERIALIZED VIEW IF NOT EXISTS movies.movie_frame_consumer
 TO movies.movie_frame
 AS SELECT movie_id, movie_duration, frame_time, _key as user_id, generateUUIDv4() as id, event.type as event_type, event.timestamp as event_timestamp
@@ -52,3 +61,11 @@ CREATE TABLE IF NOT EXISTS default.movie_frame
     created_at              DateTime  DEFAULT now()
 )
 ENGINE = Distributed('main_cluster', '', movie_frame, rand());
+
+
+CREATE TABLE IF NOT EXISTS default.movie_meta
+(
+    id                      UUID,
+    duration                Int64
+)
+ENGINE = Distributed('main_cluster', '', movie_meta, rand());

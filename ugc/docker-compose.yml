@@ -81,6 +81,8 @@ services:
       - prod
     volumes:
       - redis-data:/data
+    ports:
+      - "6379:6379"
 
 
   producer-storage:
@@ -220,7 +222,7 @@ services:
     build: ./backend/clickhouse_initer
     container_name: clickhouse-initer
     env_file: .env
-    profiles: 
+    profiles:
       - dev_ugc
       - dev_graduate
       - prod
@@ -238,7 +240,7 @@ services:
         condition: service_healthy
       clickhouse-node4:
         condition: service_healthy
- 
+
 
   clickhouse-node1:
     <<: *base-clickhouse-node
