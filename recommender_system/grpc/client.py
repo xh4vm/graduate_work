@@ -3,12 +3,12 @@ from messages.recommendation_pb2 import RecommendationRequest, RecommendationRes
 from messages.recommendation_pb2_grpc import RecommenderStub
 
 
-class PermissionClient:
+class RecommendationClient:
     def __init__(self, channel: aio.Channel) -> None:
         self.client = RecommenderStub(channel)
 
-    async def get_recommendations(self, user_id: str) -> RecommendationResponse:
+    def get_recommendations(self, user_id: str) -> RecommendationResponse:
         request = RecommendationRequest(user_id=user_id)
-        response = await self.client.get_recommendations(request)
+        response = self.client.get_recommendations(request)
 
         return {'user_id': response.user_id, 'movies_id': response.movies_id}

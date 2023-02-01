@@ -27,6 +27,13 @@ x-spark-worker: &base_spark_worker
     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
     - SPARK_SSL_ENABLED=no
 
+x-grpc: &base_grpc
+  build: ./grpc
+  container_name: recommender_grpc
+  volumes:
+    - ./grpc:/opt/grpc
+  env_file: .env
+
 services:
   nginx:
     <<: *base_service
@@ -114,15 +121,18 @@ services:
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
-  recommender_grpc:
+  recommender_grpc_dev:
     <<: *base_service
-    build: ./grpc
-    container_name: recommender_grpc
-    volumes:
-      - ./grpc:/opt/grpc
-    env_file: .env
+    <<: *base_grpc
     profiles: 
       - dev_recom
+    ports:
+      - ${RECOMMENDER_GRPC_PORT}:${RECOMMENDER_GRPC_PORT}
+
+  recommender_grpc:
+    <<: *base_service
+    <<: *base_grpc
+    profiles: 
       - prod
     expose:
       - ${RECOMMENDER_GRPC_PORT}

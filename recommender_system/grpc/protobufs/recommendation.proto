@@ -8,7 +8,7 @@ message RecommendationRequest {
 
 message RecommendationResponse {
     string user_id = 1;
-    string movies_id = 2;
+    repeated string movies_id = 2;
 }
 
 service Recommender {

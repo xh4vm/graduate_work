@@ -14,14 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-  (
-    b'\n\x14recommendation.proto\x12\x0erecommendation\"(\n\x15RecommendationRequest\x12\x0f\n\x07user_id\x18\x01 '
-    b'\x01(\t\"<\n\x16RecommendationResponse\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x11\n\tmovies_id\x18\x02 '
-    b'\x01(\t2u\n\x0bRecommender\x12\x66\n\x13get_recommendations\x12%.recommendation.RecommendationRequest\x1a&.'
-    b'recommendation.RecommendationResponse\"\x00\x62\x06proto3'
-  )
-)
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14recommendation.proto\x12\x0erecommendation\"(\n\x15RecommendationRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\"<\n\x16RecommendationResponse\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x11\n\tmovies_id\x18\x02 \x03(\t2u\n\x0bRecommender\x12\x66\n\x13get_recommendations\x12%.recommendation.RecommendationRequest\x1a&.recommendation.RecommendationResponse\"\x00\x62\x06proto3')
 
 
 
