@@ -1,0 +1,16 @@
+syntax = "proto3";
+package recommendation;
+
+
+message RecommendationRequest {
+    string user_id = 1;
+}
+
+message RecommendationResponse {
+    string user_id = 1;
+    string movies_id = 2;
+}
+
+service Recommender {
+    rpc get_recommendations (RecommendationRequest) returns (RecommendationResponse) {}
+}

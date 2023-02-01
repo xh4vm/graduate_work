@@ -114,6 +114,19 @@ services:
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
+  recommender_grpc:
+    <<: *base_service
+    build: ./grpc
+    container_name: recommender_grpc
+    volumes:
+      - ./grpc:/opt/grpc
+    env_file: .env
+    profiles: 
+      - dev_recom
+      - prod
+    expose:
+      - ${RECOMMENDER_GRPC_PORT}
+
 
 networks:
   recommended:
