@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.6-slim
 
 WORKDIR /opt/content
 ENV PYTHONPATH "/opt/content/:/opt/content/src"
