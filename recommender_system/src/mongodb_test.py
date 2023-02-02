@@ -42,30 +42,40 @@ def mongodb_test():
 
 def mongodb_with_clickhouse_test():
 
-    spark = SparkManager(master=SETTINGS.spark.master, app_name='{0} - Recommender'.format(SETTINGS.spark.app_name))
+    spark = SparkManager(master=SETTINGS.spark.master)
 
-    spark_s = spark.init_spark(SETTINGS.spark.config_list)
+    spark_s_in = spark.init_spark(
+        app_name='{0} - Input'.format(SETTINGS.spark.app_name),
+        config_list=SETTINGS.clickhouse.config_list,
+    )
+    spark_s_in.sparkContext.setLogLevel('WARN')
 
-    spark_s.sparkContext.setLogLevel('WARN')
+    spark_s_out = spark.init_spark(
+        app_name='{0} - Output'.format(SETTINGS.spark.app_name),
+        config_list=SETTINGS.mongo.config_list,
+    )
+    spark_s_out.sparkContext.setLogLevel('WARN')
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
 
-    data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+    data_rdd = ClickHouseDataSet(session=spark_s_in, properties=SETTINGS.clickhouse).get_data()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
+
+    spark_s_in.stop()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
 
     columns = ['user_id', 'film_id', 'score']
     data = generate_date()
 
-    df = spark_s.createDataFrame(data).toDF(*columns)
+    df = spark_s_out.createDataFrame(data).toDF(*columns)
 
     df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
 
-    spark_s.stop()
+    spark_s_out.stop()
 
 
 if __name__ == '__main__':

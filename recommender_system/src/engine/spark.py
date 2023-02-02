@@ -3,16 +3,14 @@ from pyspark.sql import SparkSession
 
 
 class SparkManager:
-    app_name: str
     master: str
 
-    def __init__(self, app_name, master):
+    def __init__(self, master):
 
-        self.app_name = app_name
         self.master = master
 
-    def init_spark(self, config_list) -> SparkSession:
-        spark_b = SparkSession.builder.master(self.master).appName(self.app_name)
+    def init_spark(self, app_name, config_list) -> SparkSession:
+        spark_b = SparkSession.builder.master(self.master).appName(app_name)
         for config_unit in config_list:
             spark_b = spark_b.config(*config_unit)
 

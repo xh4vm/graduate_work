@@ -18,7 +18,6 @@ class SparkSettings(CommonSettings):
     master_port: int
     app_name: str
     trim_train_dataset: bool = True
-    config_list: list = None
 
     class Config:
         env_prefix = 'SPARK_'
@@ -31,6 +30,7 @@ class ClickhouseSettings(CommonSettings):
     driver = 'com.github.housepower.jdbc.ClickHouseDriver'
     query_file_path: str
     query: str = None
+    config_list: list = (('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar'),)
 
     class Config:
         env_prefix = 'CLICKHOUSE_'
@@ -42,6 +42,7 @@ class MongoSettings(CommonSettings):
     collection: str
     create_collections_commands_json_file: str
     create_collections_indexes_commands_json_file: str
+    config_list: list = (('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2'),)
 
     class Config:
         env_prefix = 'MONGO_'

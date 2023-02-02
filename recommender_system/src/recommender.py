@@ -82,18 +82,28 @@ class AlsRecommender:
 
 def start_prepare_data():
 
-    spark = SparkManager(master=SETTINGS.spark.master, app_name='{0} - Recommender'.format(SETTINGS.spark.app_name))
+    spark = SparkManager(master=SETTINGS.spark.master)
 
-    spark_s = spark.init_spark(SETTINGS.spark.config_list)
+    spark_s_in = spark.init_spark(
+        app_name='{0} - Input'.format(SETTINGS.spark.app_name),
+        config_list=SETTINGS.clickhouse.config_list,
+    )
+    spark_s_in.sparkContext.setLogLevel('WARN')
 
-    spark_s.sparkContext.setLogLevel('WARN')
+    spark_s_out = spark.init_spark(
+        app_name='{0} - Output'.format(SETTINGS.spark.app_name),
+        config_list=SETTINGS.mongo.config_list,
+    )
+    spark_s_out.sparkContext.setLogLevel('WARN')
 
-    # data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+    # data_rdd = ClickHouseDataSet(session=spark_s_in, properties=SETTINGS.clickhouse).get_data()
 
-    data_rdd = FileDataSet(spark_s.sparkContext, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
+    data_rdd = FileDataSet(spark_s_in.sparkContext, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
+
+    spark_s_in.stop()
 
     recommender = AlsRecommender(
-        spark_s,
+        spark_s_out,
         data_rdd,
         rank=SETTINGS.als.final_parameters['rank'],
         _iter=SETTINGS.als.final_parameters['iter'],
@@ -105,7 +115,7 @@ def start_prepare_data():
 
     recommender.prepare_recommendations()
 
-    spark_s.stop()
+    spark_s_out.stop()
 
 
 if __name__ == '__main__':
