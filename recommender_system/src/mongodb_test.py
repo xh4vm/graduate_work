@@ -73,7 +73,9 @@ def mongodb_with_clickhouse_test():
 
     df = spark_s_out.createDataFrame(data).toDF(*columns)
 
-    df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
+    df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource")\
+        .option('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2')\
+        .save()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
 
