@@ -17,7 +17,7 @@ def clickhouse_test():
         .builder \
         .appName(app_name) \
         .master('spark://spark-master:7077') \
-        .config('spark.jars', '/opt/work/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar') \
+        .config('spark.jars', '/opt/clickhouse-native-jdbc-shaded-2.6.4.jar') \
         .getOrCreate()
 
     d = spark.read.format("jdbc") \
