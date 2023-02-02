@@ -44,19 +44,19 @@ def mongodb_with_clickhouse_test():
 
     spark = SparkManager(master=SETTINGS.spark.master)
 
-    spark_s_in = spark.init_spark(
-        app_name='{0} - Input'.format(SETTINGS.spark.app_name),
-        config_list=SETTINGS.clickhouse.config_list,
-    )
-    spark_s_in.sparkContext.setLogLevel('WARN')
-
-    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
-
-    data_rdd = ClickHouseDataSet(session=spark_s_in, properties=SETTINGS.clickhouse).get_data()
-
-    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
-
-    spark_s_in.stop()
+    # spark_s_in = spark.init_spark(
+    #     app_name='{0} - Input'.format(SETTINGS.spark.app_name),
+    #     config_list=SETTINGS.clickhouse.config_list,
+    # )
+    # spark_s_in.sparkContext.setLogLevel('WARN')
+    #
+    # logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
+    #
+    # data_rdd = ClickHouseDataSet(session=spark_s_in, properties=SETTINGS.clickhouse).get_data()
+    #
+    # logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
+    #
+    # spark_s_in.stop()
 
     spark_s_out = spark.init_spark(
         app_name='{0} - Output'.format(SETTINGS.spark.app_name),
