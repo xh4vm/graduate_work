@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from core.config import CONFIG, grpc_logger
+from core.config import CONFIG, logger
 from grpc import aio
 from grpc._compression import Gzip
 from messages.recommendation_pb2_grpc import add_RecommenderServicer_to_server
@@ -22,14 +22,14 @@ async def serve(db: BaseDB, logger: logging.Logger):
     )
     add_RecommenderServicer_to_server(RecommenderServer(db), server)
 
-    server.add_insecure_port(f'{CONFIG.GRPC_HOST}:{CONFIG.GRPC_PORT}')
+    server.add_insecure_port(f'{CONFIG.GRPC.HOST}:{CONFIG.GRPC.PORT}')
 
-    logger.info(f'GRPC server running on {CONFIG.GRPC_HOST}:{CONFIG.GRPC_PORT}.')
+    logger.info(f'GRPC server running on {CONFIG.GRPC.HOST}:{CONFIG.GRPC.PORT}.')
 
     await server.start()
     await server.wait_for_termination()
 
 
 if __name__ == '__main__':
-    db = AsyncMongoDB()
-    asyncio.run(serve(db=db, logger=grpc_logger))
+    db = AsyncMongoDB(settings=CONFIG.DB)
+    asyncio.run(serve(db=db, logger=logger))

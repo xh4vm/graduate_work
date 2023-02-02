@@ -31,9 +31,6 @@ endef
 .PHONY: interactive build recom services
 recom: create-venv poetry-install-build-recom build-dockers-recom
 
-.PHONY: interactive build clickhouse research
-ch-research: create-venv poetry-install-clickhouse build-dockers-ch
-
 .PHONY: clean all docker images and pyc-files
 clean-all: clean-pyc clean-all-dockers
 
@@ -95,18 +92,15 @@ clean-all-dockers:
 	$(call log,Run stop remove and cleaning memory)
 	T=$$(docker ps -q); docker stop $$T; docker rm $$T; docker container prune -f
 
-.PHONY: interactive build docker clickhouse services
-build-dockers-ch:
-	docker-compose --profile clickhouse up --build
-
-.PHONY: upgrade clickhouse's database schema
-ch-db-upgrade:
-	source venv/bin/activate; ./venv/bin/python3 backend/clickhouse/src/db_upgrade.py
-
-.PHONY: load fake-data into clickhouse
-ch-load:
-	source venv/bin/activate; ./venv/bin/python3 backend/clickhouse/src/load_data.py
-
-.PHONY: execute queries for clickhouse
-ch-benchmark:
-	source venv/bin/activate; ./venv/bin/python3 backend/clickhouse/src/benchmarks.py
+.PHONY: configure the cluster
+config_cluster:
+	$(call log,Configure the cluster)
+	docker exec -it mongocfg1 bash -c 'echo "rs.initiate({_id: \"mongors1conf\", configsvr: true, members: [{_id: 0, host: \"mongocfg1\"}, {_id: 1, host: \"mongocfg2\"}, {_id: 2, host: \"mongocfg3\"}]})" | mongosh'
+	sleep 2
+	docker exec -it mongors1n1 bash -c 'echo "rs.initiate({_id: \"mongors1\", members: [{_id: 0, host: \"mongors1n1\"}, {_id: 1, host: \"mongors1n2\"}, {_id: 2, host: \"mongors1n3\"}]})" | mongosh'
+	sleep 10
+	docker exec -it mongos1 bash -c 'echo "sh.addShard(\"mongors1/mongors1n1\")" | mongosh'
+	sleep 2
+	docker exec -it mongors2n1 bash -c 'echo "rs.initiate({_id: \"mongors2\", members: [{_id: 0, host: \"mongors2n1\"}, {_id: 1, host: \"mongors2n2\"}, {_id: 2, host: \"mongors2n3\"}]})" | mongosh'
+	sleep 10
+	docker exec -it mongos1 bash -c 'echo "sh.addShard(\"mongors2/mongors2n1\")" | mongosh'

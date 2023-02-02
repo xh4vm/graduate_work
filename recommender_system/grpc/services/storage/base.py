@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
+from typing import Any
 
 
 class BaseDB(ABC):
@@ -7,5 +8,5 @@ class BaseDB(ABC):
         '''Клиент БД'''
 
     @abstractmethod
-    def get(self):
-        '''Метод получения данных'''
+    def one(self, filter: dict[str, Any] | None = None, **kwargs):
+        '''Метод получения одного экземпляра данных'''
