@@ -72,6 +72,11 @@ build-dockers-grad:
 	$(call log,Build grad containers)
 	docker-compose --profile dev_graduate up --build
 
+.PHONY: interactive up docker grad services
+grad-up:
+	$(call log,Build grad containers)
+	docker-compose --profile dev_graduate up
+
 .PHONY: run pre-commit all files
 pre-commit-files:
 	$(call log,Run pre commit functions)
