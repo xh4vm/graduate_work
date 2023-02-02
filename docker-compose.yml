@@ -380,6 +380,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system:/opt/work
       - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
       - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
     profiles:
