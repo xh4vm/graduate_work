@@ -19,7 +19,7 @@ def mongodb_test():
     spark = SparkSession \
         .builder \
         .appName(app_name) \
-        .master('local') \
+        .master('spark://spark-master:7077') \
         .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2')\
         .config('spark.mongodb.output.uri', mongo_connect_string)\
         .config('spark.mongodb.output.database', mongo_database)\
