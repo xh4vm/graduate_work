@@ -12,6 +12,8 @@ cp ./ugc/.env.example ./ugc/.env
 
 # Копирование переменных окружения для сервиса recommender_system
 cp ./recommender_system/.env.example ./recommender_system/.env 
+# Создание файлов логов для celery
+mkdir ./recommender_system/log && echo CELERY_BEAT_LOGS > ./recommender_system/log/celery_beat.log
 
 # Копирование файлов настроек для nginx
 rm -rf ./nginx/static && cp -r ./nginx/static_defaults/ ./nginx/static

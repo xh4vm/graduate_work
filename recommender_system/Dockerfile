@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openjdk-11-jdk 
      pip install --upgrade pip \
      && pip install wheel && pip3 wheel -r requirements.txt --wheel-dir=/opt/wheels
 
-ENTRYPOINT [ "/bin/bash", "-c",  "celery --app=recommender_tasks worker --loglevel=info -f /opt/content/log/celery_worker.log & celery --app=recommender_tasks beat --loglevel=info -f /opt/content/log/celery_beat.log" ]
+ENTRYPOINT [ "/bin/bash", "-c",  "celery --app=recommender_tasks worker --loglevel=info & celery --app=recommender_tasks beat --loglevel=info -f /opt/content/log/celery_beat.log" ]
 
 COPY . .
 
