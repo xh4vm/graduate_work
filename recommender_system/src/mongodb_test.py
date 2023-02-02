@@ -58,6 +58,7 @@ def mongodb_with_clickhouse_test():
 
     spark_s_in.sparkContext.stop()
     spark_s_in.stop()
+    del spark_s_in
 
     spark_s_out = spark.init_spark(
         app_name='{0} - Output'.format(SETTINGS.spark.app_name),
