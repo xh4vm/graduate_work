@@ -395,7 +395,7 @@ services:
     volumes:
       - ./recommender_system/log/celery_worker.log:/opt/content/log/celery_worker.log:rw
       - ./recommender_system/log/celery_beat.log:/opt/content/log/celery_beat.log:rw
-      - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/work/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar
     depends_on:
       spark-master:
         condition: service_healthy

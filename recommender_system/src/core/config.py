@@ -37,7 +37,7 @@ SETTINGS.spark.config_list = (
     ('spark.driver.memory', '4g'),
     ('spark.executor.extraJavaOptions', '-Xss512m'),
     ('spark.driver.extraJavaOptions', '-Xss512m'),
-    ('spark.jars', '/opt/work/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar'),
+    ('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar'),
     ('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2'),
     ('spark.mongodb.output.uri', SETTINGS.mongo.connect_string),
     ('spark.mongodb.output.database', SETTINGS.mongo.databases['db_data']),
