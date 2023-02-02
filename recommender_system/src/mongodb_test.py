@@ -48,11 +48,11 @@ def mongodb_with_clickhouse_test():
 
     spark_s.sparkContext.setLogLevel('WARN')
 
-    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
+    # logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
 
-    data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+    # data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
 
-    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
+    # logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
 
@@ -64,6 +64,8 @@ def mongodb_with_clickhouse_test():
     df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
+
+    spark_s.stop()
 
 
 if __name__ == '__main__':
