@@ -3,9 +3,9 @@ tqdm==4.64.1
 python-dotenv==0.20.0
 loguru==0.6.0
 numpy==1.19.5
-motor==3.1.1
-backoff==2.1.2
-python-dateutil==2.4
-pydantic==1.10.4
-celery==5.2.7
-redis==3.5.3
+motor
+backoff
+python-dateutil
+pydantic
+celery
+redis
