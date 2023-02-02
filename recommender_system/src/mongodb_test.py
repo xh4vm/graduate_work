@@ -42,6 +42,10 @@ def mongodb_test():
 
 def mongodb_with_clickhouse_test():
 
+    mongo_connect_string = 'mongodb://mongos1:27017,mongos2:27017'
+    mongo_database = 'recommender'
+    mongo_collection = 'recommendations'
+
     spark = SparkManager(master=SETTINGS.spark.master)
 
     spark_s_in = spark.init_spark(
@@ -74,7 +78,10 @@ def mongodb_with_clickhouse_test():
     df = spark_s_out.createDataFrame(data).toDF(*columns)
 
     df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource")\
-        .option('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2')\
+        .option('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2') \
+        .option('spark.mongodb.output.uri', mongo_connect_string) \
+        .option('spark.mongodb.output.database', mongo_database) \
+        .option('spark.mongodb.output.collection', mongo_collection) \
         .save()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
