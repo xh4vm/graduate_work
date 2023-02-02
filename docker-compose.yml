@@ -389,7 +389,7 @@ services:
 
   recommender:
     <<: *base_service
-    build: ./
+    build: ./recommender_system/
     container_name: recommender
     restart: unless-stopped
     profiles:
