@@ -4,7 +4,7 @@ from celery.schedules import crontab
 from src.core.config import SETTINGS
 from loguru import logger
 from src.recommender import start_prepare_data
-from src.mongodb_test import mongodb_test
+from src.mongodb_test import mongodb_test, mongodb_with_clickhouse_test
 from src.clickhouse_test import clickhouse_test
 
 
@@ -27,8 +27,9 @@ def setup_recommendations_periodic_task(sender, **kwargs):
 
 @celery.task
 def task_connectors_test():
-    logger.info('Test MONGODB connector')
-    mongodb_test()
+    logger.info('START Test MONGODB and CLICKHOUSE connectors')
+    mongodb_with_clickhouse_test()
+    logger.info('END Test MONGODB and CLICKHOUSE connectors')
     # logger.info('Test CLICKHOUSE connector')
     # clickhouse_test()
 
