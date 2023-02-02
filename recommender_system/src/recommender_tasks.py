@@ -28,8 +28,8 @@ def setup_recommendations_periodic_task(sender, **kwargs):
 @celery.task
 def task_connectors_test():
     logger.info('START Test MONGODB and CLICKHOUSE connectors')
-    # mongodb_with_clickhouse_test()
-    mongodb_test()
+    mongodb_with_clickhouse_test()
+    # mongodb_test()
     logger.info('END Test MONGODB and CLICKHOUSE connectors')
     # logger.info('Test CLICKHOUSE connector')
     # clickhouse_test()

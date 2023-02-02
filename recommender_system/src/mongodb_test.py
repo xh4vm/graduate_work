@@ -24,7 +24,7 @@ def mongodb_test():
         .builder \
         .appName(app_name) \
         .master('spark://spark-master:7077') \
-        .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2')\
+        .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2') \
         .config('spark.mongodb.output.uri', mongo_connect_string)\
         .config('spark.mongodb.output.database', mongo_database)\
         .config('spark.mongodb.output.collection', mongo_collection)\
