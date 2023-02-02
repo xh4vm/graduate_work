@@ -50,12 +50,6 @@ def mongodb_with_clickhouse_test():
     )
     spark_s_in.sparkContext.setLogLevel('WARN')
 
-    spark_s_out = spark.init_spark(
-        app_name='{0} - Output'.format(SETTINGS.spark.app_name),
-        config_list=SETTINGS.mongo.config_list,
-    )
-    spark_s_out.sparkContext.setLogLevel('WARN')
-
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
 
     data_rdd = ClickHouseDataSet(session=spark_s_in, properties=SETTINGS.clickhouse).get_data()
@@ -63,6 +57,12 @@ def mongodb_with_clickhouse_test():
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
 
     spark_s_in.stop()
+
+    spark_s_out = spark.init_spark(
+        app_name='{0} - Output'.format(SETTINGS.spark.app_name),
+        config_list=SETTINGS.mongo.config_list,
+    )
+    spark_s_out.sparkContext.setLogLevel('WARN')
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
 
