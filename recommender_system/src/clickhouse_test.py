@@ -16,7 +16,7 @@ def clickhouse_test():
     spark = SparkSession \
         .builder \
         .appName(app_name) \
-        .master('spark://172.18.0.5:7077') \
+        .master('spark://spark-master:7077') \
         .config('spark.jars', '/opt/work/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar') \
         .getOrCreate()
 
