@@ -3,12 +3,12 @@ version: '3.8'
 x-base-service: &base_service
   volumes:
     - /etc/localtime:/etc/localtime:ro
-    - /etc/timezone:/etc/timezone:ro
+#    - /etc/timezone:/etc/timezone:ro
   networks:
     - recommended
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.3.1
+  image: docker.io/bitnami/spark:3.2.3
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
@@ -28,6 +28,18 @@ x-spark-worker: &base_spark_worker
     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
     - SPARK_SSL_ENABLED=no
 
+  x-redis: &base_redis
+    image: redis:7.0-alpine
+    container_name: redis
+    restart: unless-stopped
+    expose:
+      - ${REDIS_PORT}
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 services:
   nginx:
     <<: *base_service
@@ -46,9 +58,18 @@ services:
     ports:
       - ${SPARK_MASTER_WEB_PORT}:${SPARK_MASTER_WEB_PORT}
 
+  redis:
+    <<: *base_service
+    <<: *base_redis
+    profiles:
+      - dev_recom
+      - prod
+    volumes:
+      - redis-data:/data
+
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.3.1
+    image: docker.io/bitnami/spark:3.2.3
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
@@ -101,25 +122,45 @@ services:
       - dev_recom
       - prod
 
-  jupyter-notebook:
+#  jupyter-notebook:
+#    <<: *base_service
+##    build: ./jupyter-notebook/
+#    image: jupyter/pyspark-notebook:java-17.0.5
+#    container_name: jupyter-notebook
+#    hostname: jupyter-notebook
+#    depends_on:
+#      spark-master:
+#        condition: service_healthy
+#    volumes:
+#      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+#      - .:/opt/work
+#      - ./jupyter-notebook/work:/home/jovyan/work
+#    profiles:
+#      - dev_recom
+#    ports:
+#      - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
+
+  recommender:
     <<: *base_service
-#    build: ./jupyter-notebook/
-    image: jupyter/pyspark-notebook:java-17.0.5
-    container_name: jupyter-notebook
-    hostname: jupyter-notebook
+    build: ./
+    container_name: recommender
+    restart: unless-stopped
+    profiles:
+      - dev_recom
+    volumes:
+      - ./log/celery_worker.log:/opt/content/log/celery_worker.log:rw
+      - ./log/celery_beat.log:/opt/content/log/celery_beat.log:rw
     depends_on:
       spark-master:
         condition: service_healthy
-    volumes:
-      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - .:/opt/work
-      - ./jupyter-notebook/work:/home/jovyan/work
-    profiles:
-      - dev_recom
-    ports:
-      - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
+      redis:
+        condition: service_healthy
 
 
 networks:
   recommended:
     driver: bridge
+
+volumes:
+  redis-data:
+

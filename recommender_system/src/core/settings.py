@@ -3,10 +3,16 @@ from pathlib import Path
 from pydantic import BaseSettings, BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-ROOT_DIR = BASE_DIR.parent.parent
+ROOT_DIR = BASE_DIR.parent
 
 
-class SparkSettings(BaseSettings):
+class CommonSettings(BaseSettings):
+    class Config:
+        env_file = Path(BASE_DIR, '.env')
+        env_file_encoding = 'utf-8'
+
+
+class SparkSettings(CommonSettings):
     master: str = None
     master_host: str
     master_port: int
@@ -16,11 +22,9 @@ class SparkSettings(BaseSettings):
 
     class Config:
         env_prefix = 'SPARK_'
-        env_file = Path(BASE_DIR, '.env')
-        env_file_encoding = 'utf-8'
 
 
-class ClickhouseSettings(BaseSettings):
+class ClickhouseSettings(CommonSettings):
     url: str
     user: str
     password: str = ''
@@ -30,11 +34,9 @@ class ClickhouseSettings(BaseSettings):
 
     class Config:
         env_prefix = 'CLICKHOUSE_'
-        env_file = Path(BASE_DIR, '.env')
-        env_file_encoding = 'utf-8'
 
 
-class MongoSettings(BaseSettings):
+class MongoSettings(CommonSettings):
     connect_string: str
     databases: dict
     collection: str
@@ -43,11 +45,9 @@ class MongoSettings(BaseSettings):
 
     class Config:
         env_prefix = 'MONGO_'
-        env_file = Path(BASE_DIR, '.env')
-        env_file_encoding = 'utf-8'
 
 
-class AlsSettings(BaseSettings):
+class AlsSettings(CommonSettings):
     model_params_file_name: str = 'best_model_params.json'
     model_params_file_path: str = None
     rank = (5, 10, 15, 20)
@@ -58,11 +58,26 @@ class AlsSettings(BaseSettings):
 
     class Config:
         env_prefix = 'ALS_'
-        env_file = Path(BASE_DIR, '.env')
-        env_file_encoding = 'utf-8'
 
 
-class Settings(BaseSettings):
+class RedisSettings(CommonSettings):
+    host: str
+    port: int
+
+    class Config:
+        env_prefix = 'REDIS_'
+
+
+REDIS_CONFIG = RedisSettings()
+
+
+class CelerySettings(BaseModel):
+    name = 'recommender_tasks'
+    broker = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
+    backend = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
+
+
+class Settings(BaseModel):
     """Class main settings."""
     root_dir = ROOT_DIR
     base_dir = BASE_DIR
@@ -70,11 +85,9 @@ class Settings(BaseSettings):
     clickhouse = ClickhouseSettings().parse_obj(ClickhouseSettings().dict())
     mongo = MongoSettings().parse_obj(MongoSettings().dict())
     als = AlsSettings().parse_obj(AlsSettings().dict())
+    celery = CelerySettings().parse_obj(CelerySettings().dict())
     sample_size = 1000
     seed = 1001
     backoff_max_tries = 3
     file_rating_path = 'jupyter-notebook/work/ratings_100.csv'
 
-    class Config:
-        env_prefix = 'PROJECT_'
-        env_file = Path(ROOT_DIR, '.env')

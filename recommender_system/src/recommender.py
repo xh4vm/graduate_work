@@ -51,7 +51,6 @@ class AlsRecommender:
         ).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
 
         predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
-        # predictions_df.write.format("mongodb").mode("append").save()
 
     def prepare_recommendations(self):
 
@@ -81,7 +80,7 @@ class AlsRecommender:
         self.save_recommendations(predictions)
 
 
-if __name__ == '__main__':
+def start_prepare_data():
 
     spark = SparkManager(master=SETTINGS.spark.master, app_name='{0} - Recommender'.format(SETTINGS.spark.app_name))
 
@@ -107,3 +106,9 @@ if __name__ == '__main__':
     recommender.prepare_recommendations()
 
     spark_s.stop()
+
+
+if __name__ == '__main__':
+
+    start_prepare_data()
+

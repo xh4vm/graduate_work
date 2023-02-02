@@ -19,6 +19,8 @@ backoff = "2.2.1"
 python-dateutil = "2.4"
 numpy = "1.24.1"
 pydantic = "1.10.4"
+celery = "5.2.7"
+redis = "4.4.2"
 
 [build-system]
 requires = ["poetry-core"]

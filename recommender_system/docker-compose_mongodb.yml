@@ -155,7 +155,7 @@ services:
     expose:
       - "27017"
     ports:
-      - "27017:27018"
+      - "27018:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     profiles: 
@@ -163,7 +163,7 @@ services:
 
 networks:
   recommended:
-    name: graduate_work_graduate
-#    name: recommender_system_recommended
+#    name: graduate_work_graduate
+    name: recommender_system_recommended
     external: true
 
