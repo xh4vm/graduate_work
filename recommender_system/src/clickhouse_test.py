@@ -19,6 +19,8 @@ def clickhouse_test():
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(d.count()))
 
+    spark.stop()
+
 
 if __name__ == '__main__':
 

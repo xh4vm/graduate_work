@@ -33,6 +33,7 @@ def mongodb_test():
 
     df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
+    spark.stop()
 
 if __name__ == '__main__':
 
