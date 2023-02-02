@@ -395,8 +395,8 @@ services:
     profiles:
       - dev_graduate
     volumes:
-      - ./log/celery_worker.log:/opt/content/log/celery_worker.log:rw
-      - ./log/celery_beat.log:/opt/content/log/celery_beat.log:rw
+      - ./recommender_system/log/celery_worker.log:/opt/content/log/celery_worker.log:rw
+      - ./recommender_system/log/celery_beat.log:/opt/content/log/celery_beat.log:rw
     depends_on:
       spark-master:
         condition: service_healthy
