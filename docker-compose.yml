@@ -54,6 +54,8 @@ x-spark-worker: &base_spark_worker
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system:/opt/work
     - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar
+    - ./recommender_system/spark/mongo-spark-connector_2.12-3.0.2.jar:/opt/jars/mongo-spark-connector_2.12-3.0.2.jar
+
   depends_on:
     spark-master:
       condition: service_healthy
@@ -318,6 +320,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./recommender_system/spark/mongo-spark-connector_2.12-3.0.2.jar:/opt/jars/mongo-spark-connector_2.12-3.0.2.jar
       - ./recommender_system:/opt/work
 
     profiles:
@@ -380,6 +383,7 @@ services:
       - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
       - ./recommender_system:/opt/work
       - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./recommender_system/spark/mongo-spark-connector_2.12-3.0.2.jar:/opt/jars/mongo-spark-connector_2.12-3.0.2.jar
     profiles:
       - dev_graduate
     ports:
@@ -396,6 +400,7 @@ services:
       - ./recommender_system/log/celery_worker.log:/opt/content/log/celery_worker.log:rw
       - ./recommender_system/log/celery_beat.log:/opt/content/log/celery_beat.log:rw
       - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./recommender_system/spark/mongo-spark-connector_2.12-3.0.2.jar:/opt/jars/mongo-spark-connector_2.12-3.0.2.jar
     depends_on:
       spark-master:
         condition: service_healthy
