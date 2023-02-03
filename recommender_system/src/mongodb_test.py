@@ -4,6 +4,7 @@ from src.engine.spark import SparkManager
 from src.core.config import SETTINGS
 from loguru import logger
 from src.db.source.clickhouse import ClickHouseDataSet
+from pyspark import SparkContext, SparkConf
 
 
 def generate_date():
@@ -60,15 +61,18 @@ def mongodb_with_clickhouse_test():
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(data_rdd.count()))
 
-    spark_s_in.sparkContext.stop()
-    spark_s_in.stop()
-    del spark_s_in
+    # spark_s_in.sparkContext.stop()
+    # spark_s_in.stop()
+    # del spark_s_in
 
-    spark_s_out = spark.init_spark(
-        app_name='{0} - Output'.format(SETTINGS.spark.app_name),
-        config_list=SETTINGS.mongo.config_list,
-    )
-    spark_s_out.sparkContext.setLogLevel('WARN')
+    # spark_s_out = spark.init_new_spark(
+    #     spark_s_in,
+    #     app_name='{0} - Output'.format(SETTINGS.spark.app_name),
+    #     config_list=SETTINGS.mongo.config_list,
+    # )
+    # spark_s_out.sparkContext.setLogLevel('WARN')
+
+    spark_s_out = spark_s_in.newSession().builder.appName('{0} - Output'.format(SETTINGS.spark.app_name)).getOrCreate()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
 
@@ -88,6 +92,11 @@ def mongodb_with_clickhouse_test():
 
     spark_s_out.sparkContext.stop()
     spark_s_out.stop()
+
+
+def mongodb_with_clickhouse_test1():
+    spark = SparkSession.builder.master(master=SETTINGS.spark.master)
+    pass
 
 
 if __name__ == '__main__':
