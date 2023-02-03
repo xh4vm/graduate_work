@@ -39,13 +39,12 @@ def mongodb_with_clickhouse_together_test():
                 .option('spark.mongodb.output.database', 'recommender') \
                 .option('spark.mongodb.output.collection', 'recommendations') \
                 .save()
+        logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
     except Exception as err:
         logger.error(err)
 
     finally:
         spark_all.stop()
-
-    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
 
 
 if __name__ == '__main__':
