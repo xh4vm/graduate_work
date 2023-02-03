@@ -49,7 +49,6 @@ def mongodb_test():
     # sc = SparkContext(conf=conf)
 
 
-
 def mongodb_with_clickhouse_test():
 
     mongo_connect_string = 'mongodb://mongos1:27017,mongos2:27017'
@@ -137,6 +136,8 @@ def mongodb_with_clickhouse_test1():
         .config('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar') \
         .getOrCreate()
 
+    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
+
     d = spark_all.read.format("jdbc") \
         .option('driver', 'com.github.housepower.jdbc.ClickHouseDriver') \
         .option('url', 'jdbc:clickhouse://clickhouse-node1:9000') \
@@ -144,6 +145,10 @@ def mongodb_with_clickhouse_test1():
         .option('password', '') \
         .option('query', "with t as (select user_id, movie_id, max(movie_duration) as movie_duration, sum(multiIf(event_type == 'starting', -1 * frame_time, event_type == 'stopped', frame_time, 0)) as metric, argMax(frame_time, created_at) as last_frame_time from (SELECT user_id, movie_id, frame_time, movie_duration, event_type, created_at from default.movie_frame ORDER BY created_at) GROUP BY user_id, movie_id) select user_id, movie_id, if(metric <= 0, last_frame_time + metric, metric) / movie_duration as metric from t") \
         .load()
+
+    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(d.count()))
+
+    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
 
     df = spark_all.createDataFrame(generate_date()).toDF('user_id', 'film_id', 'score')
 
@@ -153,7 +158,9 @@ def mongodb_with_clickhouse_test1():
         .option('spark.mongodb.output.collection', 'recommendations') \
         .save()
 
+    logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! MONGODB OK !!!!!!!!!!!!!!!!!!!')
+
 
 if __name__ == '__main__':
 
-    mongodb_test()
+    mongodb_with_clickhouse_test1()
