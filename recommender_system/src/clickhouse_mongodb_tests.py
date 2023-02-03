@@ -26,8 +26,6 @@ def mongodb_with_clickhouse_together_test():
         logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE COUNT: {0} !!!!!!!!!!!!!!!!!!!'.format(d.count()))
     except Exception as err:
         logger.error(err)
-
-    finally:
         spark_all.stop()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! TO MONGODB !!!!!!!!!!!!!!!!!!!')
