@@ -1,13 +1,7 @@
 from celery import Celery
-
 from celery.schedules import crontab
-
-from src.clickhouse_mongodb_tests import mongodb_with_clickhouse_together_test
 from src.core.config import SETTINGS
-from loguru import logger
 from src.recommender import start_prepare_data
-from src.mongodb_test import mongodb_test, mongodb_with_clickhouse_test1
-from src.clickhouse_test import clickhouse_test
 
 
 celery = Celery(SETTINGS.celery.name, backend=SETTINGS.celery.backend, broker=SETTINGS.celery.broker)
