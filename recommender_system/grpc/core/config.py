@@ -11,6 +11,15 @@ class GRPCSettings(BaseSettings):
         env_prefix = 'RECOMMENDER_GRPC_'
 
 
+class RedisSettings(BaseSettings):
+    HOST: str
+    PORT: int
+    CACHE_EXPIRE: int
+
+    class Config:
+        env_prefix = 'REDIS_'
+
+
 class DBSettings(BaseSettings):
     DRIVER: str
     HOST: str
@@ -28,6 +37,7 @@ class MongoDBSettings(DBSettings):
 class Config(BaseSettings):
     GRPC = GRPCSettings()
     DB = MongoDBSettings()
+    CACHE = RedisSettings()
 
 CONFIG = Config()
 BACKOFF_CONFIG = {'wait_gen': backoff.expo, 'exception': Exception, 'max_value': 128}

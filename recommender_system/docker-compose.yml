@@ -7,6 +7,18 @@ x-base-service: &base_service
   networks:
     - recommended
 
+x-redis: &base_redis
+  image: redis:7.0-alpine
+  container_name: redis
+  restart: unless-stopped
+  expose:
+    - ${REDIS_PORT}
+  healthcheck:
+    test: [ "CMD", "redis-cli","ping" ]
+    interval: 30s
+    timeout: 10s
+    retries: 5
+
 x-spark-worker: &base_spark_worker
   image: docker.io/bitnami/spark:3.0.1
   restart: on-failure
@@ -121,6 +133,15 @@ services:
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
+  redis:
+    <<: *base_service
+    <<: *base_redis
+    profiles:
+      - dev_recom
+      - prod
+    volumes:
+      - redis-data:/data
+
   recommender_grpc_dev:
     <<: *base_service
     <<: *base_grpc
@@ -147,7 +168,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data1:/data/db
+      - mongo_cluster1-data1:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -161,7 +182,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data2:/data/db
+      - mongo_cluster1-data2:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -175,7 +196,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data3:/data/db
+      - mongo_cluster1-data3:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -189,7 +210,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data4:/data/db
+      - mongo_cluster1-data4:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -203,7 +224,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data5:/data/db
+      - mongo_cluster1-data5:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -217,7 +238,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/data6:/data/db
+      - mongo_cluster1-data6:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -231,7 +252,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/config1:/data/db
+      - mongo_cluster1-config1:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -245,7 +266,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/config2:/data/db
+      - mongo_cluster1-config2:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -259,7 +280,7 @@ services:
       - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster1/config3:/data/db
+      - mongo_cluster1-config3:/data/db
     profiles: 
       - dev_recom
       - mongo
@@ -304,3 +325,15 @@ services:
 networks:
   recommended:
     driver: bridge
+
+volumes:
+  mongo_cluster1-config1:
+  mongo_cluster1-config2:
+  mongo_cluster1-config3:
+  mongo_cluster1-data1:
+  mongo_cluster1-data2:
+  mongo_cluster1-data3:
+  mongo_cluster1-data4:
+  mongo_cluster1-data5:
+  mongo_cluster1-data6:
+  redis-data:

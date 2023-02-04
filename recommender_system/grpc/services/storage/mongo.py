@@ -23,7 +23,10 @@ class AsyncMongoDB(BaseDB):
         if self._conn is not None:
             self._conn.close()
         
-        return AsyncIOMotorClient(f'{self._settings.DRIVER}://{self._settings.HOST}:{self._settings.PORT}')
+        return AsyncIOMotorClient(
+            f'{self._settings.DRIVER}://{self._settings.HOST}:{self._settings.PORT}',
+            uuidRepresentation='standard'
+        )
 
     @property
     def conn(self) -> AsyncIOMotorClient:
@@ -32,10 +35,33 @@ class AsyncMongoDB(BaseDB):
 
         return self._conn
 
-    async def one(
+    def last(
         self,
         db_name: str,
         collection_name: str,
-        filter: dict[str, Any] | None = None
+        count: int,
+        filter: dict[str, Any] | None = None,
+        sorts: list[Any] | None = None
     ):
-        return await self.conn[db_name][collection_name].find_one(filter or {})
+        cursor = self.conn[db_name][collection_name].find(filter or {})
+         
+        if sorts is not None:
+            cursor = cursor.sort(sorts)
+        
+        return cursor.limit(count)
+
+    async def last_one(
+        self,
+        db_name: str,
+        collection_name: str,
+        filter: dict[str, Any] | None = None,
+        sorts: list[Any] | None = None
+    ) -> dict[str, Any]:
+        async for elem in self.last(
+            count=1,
+            db_name=db_name,
+            collection_name=collection_name,
+            filter=filter,
+            sorts=sorts
+        ):
+            return elem

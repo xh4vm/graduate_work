@@ -8,5 +8,9 @@ class BaseDB(ABC):
         '''Клиент БД'''
 
     @abstractmethod
-    def one(self, filter: dict[str, Any] | None = None, **kwargs):
-        '''Метод получения одного экземпляра данных'''
+    def last(self, count: int, sorts: list[Any] | None = None, filter: dict[str, Any] | None = None, **kwargs):
+        '''Метод получения {{count}} последних экземпляров'''
+
+    @abstractmethod
+    def last_one(self, sorts: list[Any] | None = None, filter: dict[str, Any] | None = None, **kwargs):
+        '''Метод получения {{count}} последних экземпляров'''
