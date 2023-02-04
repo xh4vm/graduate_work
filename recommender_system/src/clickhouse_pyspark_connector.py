@@ -2,7 +2,7 @@
 
 from pyspark.sql import SparkSession
 
-ABSOLUTE_PATH_TO_JARFILE = '/opt/jars/clickhouse-jdbc-0.3.1.jar'
+ABSOLUTE_PATH_TO_JARFILE = '/opt/jars/clickhouse-jdbc-0.3.2.jar'
 # CLICKHOUSE_JAR = f'file://{ABSOLUTE_PATH_TO_JARFILE}'
 
 
