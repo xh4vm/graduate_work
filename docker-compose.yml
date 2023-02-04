@@ -46,7 +46,7 @@ x-base-kafka: &base_kafka
   command: "bash -c 'if [ ! -f /tmp/start.sh ]; then echo \"ERROR: Did you forget the start.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/start.sh && /etc/confluent/docker/run ; fi'"
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.1.0
+  image: docker.io/bitnami/spark:3.1.1
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
@@ -312,7 +312,7 @@ services:
 
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.1.0
+    image: docker.io/bitnami/spark:3.1.1
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
