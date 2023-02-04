@@ -5,12 +5,14 @@ from mongodb_test import generate_date
 
 def mongodb_with_clickhouse_together_test():
 
+#    .config('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar') \
+
     spark_all = SparkSession \
         .builder \
         .appName('TEST') \
         .master('spark://spark-master:7077') \
         .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2') \
-        .config('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar') \
+        .config('spark.jars', 'com.github.housepower:clickhouse-native-jdbc-shaded:2.6.5') \
         .getOrCreate()
 
     logger.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!! FROM CLICKHOUSE !!!!!!!!!!!!!!!!!!!')
