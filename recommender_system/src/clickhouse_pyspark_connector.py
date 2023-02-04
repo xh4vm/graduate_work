@@ -26,6 +26,20 @@ def init_spark(app_name: str, num_executors: int, executor_memory='1G',
                 f'/usr/hdp/2.6.5.0-292/hadoop/lib/native:{CLICKHOUSE_JAR}')
         )
 
+    # .config('spark.driver.userClassPathFirst', 'true')
+    # .config('spark.driver.extraLibraryPath',
+    #         '/usr/hdp/2.6.5.0-292/hadoop/lib/native:file:///opt/jars/clickhouse-jdbc-0.3.2.jar')
+    # .config('spark.executor.userClassPathFirst', 'true')
+    # .config('spark.executor.extraLibraryPath',
+    #         '/usr/hdp/2.6.5.0-292/hadoop/lib/native:file:///opt/jars/clickhouse-jdbc-0.3.2.jar')
+
+    spark_session = (
+        SparkSession
+        .builder
+        .appName('Clickhouse test')
+        .master('spark://spark-master:7077')
+    )
+
     spark = (
         spark_session
         .getOrCreate()
