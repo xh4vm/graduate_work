@@ -8,6 +8,7 @@ def clickhouse_test():
         .builder \
         .appName('TEST CLICKHOUSE') \
         .master('spark://spark-master:7077') \
+        .config('driver-class-path' './clickhouse-native-jdbc-shaded-2.6.5.jar') \
         .config('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.5.jar') \
         .getOrCreate()
 
