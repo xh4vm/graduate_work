@@ -17,13 +17,18 @@ WORKDIR ${HOME}
 
 # Install dependencies
 COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-11-jdk && \
+     pip install --upgrade pip \
+     && pip install wheel && pip3 wheel -r requirements.txt --wheel-dir=/opt/wheels \
 
 # Make sure the contents of our repo are in ${HOME}
 COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
+
+RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
 
 ENTRYPOINT ["python3", "-m"]
 #CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
