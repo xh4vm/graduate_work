@@ -1,4 +1,4 @@
-FROM python:3.10-slim-buster
+FROM python:3.6-slim-buster
 
 WORKDIR /opt/content
 ENV PYTHONPATH "/opt/content/:/opt/content/src"
