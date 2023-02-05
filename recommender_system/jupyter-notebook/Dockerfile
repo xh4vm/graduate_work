@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openjdk-11-jdk 
      pip install --upgrade pip \
      && pip install wheel && pip3 wheel -r requirements.txt --wheel-dir=/opt/wheels \
 
+RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
+
 # Set non-root user for binder
 ARG NB_USER=jovyan
 ARG NB_UID=1000
@@ -32,8 +34,6 @@ COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
-
-RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
 
 ENTRYPOINT ["python3", "-m"]
 #CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
