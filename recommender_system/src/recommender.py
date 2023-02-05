@@ -5,7 +5,7 @@ from src.core.config import SETTINGS
 from pyspark.sql import SparkSession
 from pyspark import SparkContext, RDD
 from pyspark.mllib.recommendation import ALS
-from pyspark.sql.functions import desc
+from pyspark.sql.functions import desc, collect_list
 
 from src.db.source.file_data_source import FileDataSet
 
@@ -46,11 +46,11 @@ class AlsRecommender:
 
         predictions_df = self.spark.createDataFrame(predictions).withColumnRenamed(
             'user', 'user_id'
-        ).withColumnRenamed(
-            'product', 'film_id'
-        ).withColumnRenamed('rating', 'score').orderBy('user_id', desc('score'))
+        ).orderBy('user_id', desc('rating'))
 
-        predictions_df.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
+        group_by_user = predictions_df.groupBy('user_id').agg(collect_list('product')).alias('movies_id')
+
+        group_by_user.write.mode('overwrite').format("com.mongodb.spark.sql.DefaultSource").save()
 
     def prepare_recommendations(self):
 

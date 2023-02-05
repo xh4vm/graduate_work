@@ -114,6 +114,9 @@ ch-benchmark:
 .PHONY: run mongo containers
 mongo: run_containers
 
+.PHONY: run mongo containers
+mongo-up: run_containers-up
+
 .PHONY: interactive build mongo cluster
 mongo_cfg: config_cluster poetry-install-recom create_recommendations_coll
 
@@ -128,6 +131,11 @@ spark_dep: spark_install_dependencies
 
 .PHONY: run docker mongodb containers
 run_containers:
+	$(call log,Build & run containers)
+	docker-compose -f docker-compose_mongodb.yml --profile mongo up --build
+
+.PHONY: run docker mongodb containers
+run_containers-up:
 	$(call log,Run containers)
 	docker-compose -f docker-compose_mongodb.yml --profile mongo up
 
@@ -148,7 +156,7 @@ config_cluster:
 create_mongo_db:
 	$(call log,Create database)
 	docker exec -it mongors1n1 bash -c 'echo "use recommender" | mongosh'
-	docker exec -it mongos1 bash -c 'echo "sh.enableSharding(\"movies\")" | mongosh'
+	docker exec -it mongos1 bash -c 'echo "sh.enableSharding(\"recommender\")" | mongosh'
 
 
 .PHONY: create recommendations collections with index

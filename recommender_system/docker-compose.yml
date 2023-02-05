@@ -8,7 +8,7 @@ x-base-service: &base_service
     - recommended
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.2.3
+  image: docker.io/bitnami/spark:3.0.1
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
@@ -69,7 +69,7 @@ services:
 
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.2.3
+    image: docker.io/bitnami/spark:3.0.1
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
@@ -122,39 +122,39 @@ services:
       - dev_recom
       - prod
 
-#  jupyter-notebook:
-#    <<: *base_service
-##    build: ./jupyter-notebook/
-#    image: jupyter/pyspark-notebook:java-17.0.5
-#    container_name: jupyter-notebook
-#    hostname: jupyter-notebook
-#    depends_on:
-#      spark-master:
-#        condition: service_healthy
-#    volumes:
-#      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-#      - .:/opt/work
-#      - ./jupyter-notebook/work:/home/jovyan/work
-#    profiles:
-#      - dev_recom
-#    ports:
-#      - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
-
-  recommender:
+  jupyter-notebook:
     <<: *base_service
-    build: ./
-    container_name: recommender
-    restart: unless-stopped
-    profiles:
-      - dev_recom
-    volumes:
-      - ./log/celery_worker.log:/opt/content/log/celery_worker.log:rw
-      - ./log/celery_beat.log:/opt/content/log/celery_beat.log:rw
+    build: ./jupyter-notebook/
+#    image: jupyter/pyspark-notebook:spark-3.1.1
+    container_name: jupyter-notebook
+    hostname: jupyter-notebook
     depends_on:
       spark-master:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+    volumes:
+      - ./jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - .:/opt/work
+      - ./jupyter-notebook/work:/home/jovyan/work
+    profiles:
+      - dev_recom
+    ports:
+      - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
+
+#  recommender:
+#    <<: *base_service
+#    build: ./
+#    container_name: recommender
+#    restart: unless-stopped
+#    profiles:
+#      - dev_recom
+#    volumes:
+#      - ./log/celery_worker.log:/opt/content/log/celery_worker.log:rw
+#      - ./log/celery_beat.log:/opt/content/log/celery_beat.log:rw
+#    depends_on:
+#      spark-master:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
 
 
 networks:
