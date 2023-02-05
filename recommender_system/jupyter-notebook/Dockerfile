@@ -3,13 +3,7 @@ FROM python:3.10-slim-buster
 WORKDIR /opt/content
 ENV PYTHONPATH "/opt/content/:/opt/content/src"
 
-COPY requirements.txt ./
-
-RUN apt-get update && apt-get install -y --no-install-recommends openjdk-11-jdk && \
-     pip install --upgrade pip \
-     && pip install wheel && pip3 wheel -r requirements.txt --wheel-dir=/opt/wheels \
-
-RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-11-jdk && pip install --upgrade pip
 
 # Set non-root user for binder
 ARG NB_USER=jovyan
@@ -27,7 +21,9 @@ RUN adduser --disabled-password \
 WORKDIR ${HOME}
 
 # Install dependencies
-#COPY requirements.txt requirements.txt
+COPY requirements.txt requirements.txt
+
+RUN pip3 install -r requirements.txt
 
 # Make sure the contents of our repo are in ${HOME}
 COPY . ${HOME}
