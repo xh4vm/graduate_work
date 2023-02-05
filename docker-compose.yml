@@ -545,6 +545,8 @@ services:
       - ./recommender_system/init_mongodb_cluster.sh:/opt/init_mongodb_cluster.sh
     profiles:
       - mongo
+      - dev_graduate
+      - prod
     depends_on:
       - mongos1
       - mongos2
@@ -562,6 +564,8 @@ services:
     container_name: mongodb_initer
     profiles:
       - mongo
+      - dev_graduate
+      - prod
     depends_on:
       mongo_cluster_initer:
         condition: service_healthy
