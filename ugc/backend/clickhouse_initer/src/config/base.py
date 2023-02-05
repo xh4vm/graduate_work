@@ -29,6 +29,7 @@ class ETLSettings(BaseSettings):
     REDIS_HOST: str = ""
     REDIS_PORT: int = 0
     MOVIES_ADMINPANEL_API_URL: str = ""
+    ETL_MOVIE_METADATA_SCHEDULE: str | None = None
 
 
 CLICKHOUSE_CONFIG: ClickhouseSettings = ClickhouseSettings()

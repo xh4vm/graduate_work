@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from typing import Iterator
 
+import backoff
+from clickhouse_driver.errors import NetworkError
 from pydantic import BaseModel
 
 from clickhouse.client import ClickhouseClient
+from config.logger import logger
 from loader.base import BaseLoader
 
 
@@ -11,6 +14,9 @@ from loader.base import BaseLoader
 class ClickhouseLoader(BaseLoader):
     client: ClickhouseClient
 
+    @backoff.on_exception(
+        wait_gen=backoff.expo, exception=NetworkError, max_tries=10, logger=logger
+    )
     def insert(self, data: Iterator[BaseModel], **kwargs) -> None:
         table: str = kwargs.get("table", "")
         response = self.client.conn.execute(
