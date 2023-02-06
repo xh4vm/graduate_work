@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from pyspark.sql import DataFrame, SparkSession
 
 
-class SourceDataSet(ABC):
+class ReceiverDataSet(ABC):
     spark: SparkSession = None
 
     @abstractmethod
-    def get_data(self, *args, **kwargs) -> DataFrame:
+    def save_data(self, df: DataFrame, *args, **kwargs):
         pass

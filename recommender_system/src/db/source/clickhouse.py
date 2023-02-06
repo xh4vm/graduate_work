@@ -1,19 +1,19 @@
 import os
-from pyspark.rdd import RDD
+from pyspark.sql import DataFrame
 import json
 from pyspark.sql import SparkSession
 from src.core.settings import ClickhouseSettings
 
-from src.db.source.base import DataSet
+from src.db.source.base import SourceDataSet
 
 
-class ClickHouseDataSet(DataSet):
+class ClickHouseSourceDataSet(SourceDataSet):
 
     def __init__(self, session: SparkSession, properties: ClickhouseSettings):
         self.session = session
         self.properties = properties
 
-    def get_data(self, *args, **kwargs) -> RDD:
+    def get_data(self, *args, **kwargs) -> DataFrame:
         data_frame = self.session.read.format("jdbc") \
             .option('driver', self.properties.driver) \
             .option('url', self.properties.url) \
@@ -21,8 +21,7 @@ class ClickHouseDataSet(DataSet):
             .option('password', self.properties.password) \
             .option('query', self.properties.query) \
             .load()
-
-        return data_frame.rdd
+        return data_frame
 
 
 

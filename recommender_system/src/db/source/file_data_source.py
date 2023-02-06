@@ -1,26 +1,16 @@
 import os
-from pyspark.rdd import RDD
+from pyspark.sql import DataFrame
 import json
 
-from src.db.source.base import DataSet
+from src.db.source.base import SourceDataSet
 
 
-class FileDataSet(DataSet):
+class FileDataSet(SourceDataSet):
     dataset_folder_path = None
 
-    def __init__(self, context, folder_path):
-        self.context = context
-        self.dataset_folder_path = folder_path
+    def __init__(self, spark, folder_path):
+        self.spark = spark
 
-    def get_data(self, *args, **kwargs) -> RDD:
-        ratings_file = os.path.join(self.dataset_folder_path, kwargs['filename'])
-        ratings_raw_data = self.context.textFile('file:///' + ratings_file)
-        ratings_raw_data_header = ratings_raw_data.take(1)[0]
-        ratings_data = ratings_raw_data.filter(lambda line: line != ratings_raw_data_header) .map(
-            lambda line: line.split(",")
-        ).map(
-            lambda tokens: (int(tokens[0]), int(tokens[1]), int(float(tokens[2])))
-        ).cache()
-
-        return ratings_data
+    def get_data(self, *args, **kwargs) -> DataFrame:
+        return self.spark.read.load(kwargs['filepath'], format='csv', header=True, inferSchema=True)
 

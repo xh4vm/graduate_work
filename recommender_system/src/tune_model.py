@@ -1,29 +1,31 @@
 import gc
+from src.db.source.clickhouse import ClickHouseSourceDataSet
+
+from pyspark.sql import SparkSession, DataFrame
+
 from src.core.config import SETTINGS
-from src.core.settings import AlsSettings
-from src.db.source.base import DataSet
+from src.core.settings import AlsSettings, AlsHeadersCol
 from src.db.source.file_data_source import FileDataSet
 from loguru import logger
 from tqdm import tqdm
 import itertools
-from pyspark import SparkContext, SparkConf, RDD
-from pyspark.mllib.recommendation import ALS
-from src.metrics import get_rmse
+from pyspark import SparkContext, SparkConf
+from pyspark.ml.recommendation import ALS
 from pydantic import BaseModel
 
 from src.utilities.file_utilities import write_best_parameters
+from pyspark.ml.evaluation import RegressionEvaluator
 
 
 class AlsTuner:
 
     class AlsTunerParamsData(BaseModel):
-        scores_dataframe: RDD
+        scores_dataframe: DataFrame
         trim_dataset: bool
         sample_size: int = None
         nb_validating: int = None
-        rdd_validating_with_ratings: RDD = None
-        rdd_validating_no_ratings: RDD = None
-        rdd_training: RDD = None
+        valid_data: DataFrame = None
+        train_data: DataFrame = None
         seed: int
 
         class Config:
@@ -36,15 +38,17 @@ class AlsTuner:
         alpha: tuple
         final_parameters: dict = None
         model_params_file_path: str
+        headers_col: AlsHeadersCol
 
-    sc: SparkContext
+    spark: SparkSession
     data_params: AlsTunerParamsData
     als_params: AlsTunerParamsAls
+    model: ALS = None
 
     def __init__(
         self,
-        spark_context: SparkContext,
-        income_data: RDD,
+        spark_session: SparkSession,
+        income_data: DataFrame,
         seed: int,
         als_params: AlsSettings,
         trim_dataset: bool = False,
@@ -52,7 +56,7 @@ class AlsTuner:
         **kwargs
     ):
 
-        self.sc = spark_context
+        self.spark = spark_session
         self.data_params = self.AlsTunerParamsData(
             scores_dataframe=income_data,
             trim_dataset=trim_dataset,
@@ -60,9 +64,16 @@ class AlsTuner:
             seed=seed
         )
 
+        self.model = ALS(
+            userCol=self.als_params.headers_col.user_col,
+            itemCol=self.als_params.headers_col.item_col,
+            ratingCol=self.als_params.headers_col.rating_col,
+            coldStartStrategy="drop",
+        )
+
         self.als_params = self.AlsTunerParamsAls(**als_params.dict())
 
-        self.sc.setLogLevel('WARN')
+        self.spark.sparkContext.setLogLevel('WARN')
 
     def find_parameters(self):
         final_rank = 0
@@ -73,20 +84,16 @@ class AlsTuner:
         for c_rank, c_regular, c_iter, c_alpha in tqdm(itertools.product(
             self.als_params.rank, self.als_params.regular, self.als_params.iter, self.als_params.alpha
         )):
+            als = self.model.setAlpha().setMaxIter(c_iter).setRank(c_rank).setRegParam(c_regular)
 
-            model = ALS.trainImplicit(
-                self.data_params.rdd_training,
-                c_rank,
-                c_iter,
-                float(c_regular),
-                alpha=float(c_alpha),
-            )
+            new_model = als.fit(self.data_params.train_data)
 
-            predictions = model.predictAll(self.data_params.rdd_validating_no_ratings).map(
-                lambda p: ((p[0], p[1]), p[2])
-            )
+            predictions = new_model.transform(self.data_params.valid_data)
 
-            dist = get_rmse(self.data_params.rdd_validating_with_ratings, self.data_params.nb_validating, predictions)
+            evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+
+            dist = evaluator.evaluate(predictions)
+
             if dist < final_dist:
                 logger.info(
                     'c_iter: {0} c_rank: {1} c_alpha: {2} c_regular: {3}'.format(c_iter, c_rank, c_alpha, c_regular))
@@ -96,7 +103,8 @@ class AlsTuner:
                 final_iter = c_iter
                 final_dist = dist
                 final_alpha = c_alpha
-            del model, predictions
+
+            del new_model, als, predictions
             gc.collect()
 
         self.als_params.parameters = {
@@ -116,17 +124,12 @@ class AlsTuner:
                 seed=self.data_params.seed
             )
 
-        self.data_params.rdd_training, rdd_validating = self.data_params.scores_dataframe.randomSplit([6, 4], seed=1001)
-        self.data_params.rdd_validating_no_ratings = rdd_validating.map(lambda x: (int(x[0]), int(x[1])))
-        self.data_params.rdd_validating_with_ratings = rdd_validating.map(
-            lambda x: ((int(x[0]), int(x[1])), float(x[2]))
-        )
-
-        self.data_params.nb_validating = rdd_validating.count()
+        self.data_params.train_data, self.data_params.valid_data = \
+            self.data_params.scores_dataframe.randomSplit([6, 4], seed=self.data_params.seed)
 
         logger.info('Training: {0}, validation: {1}'.format(
-            self.data_params.rdd_training.count(),
-            self.data_params.nb_validating),
+            self.data_params.train_data.count(),
+            self.data_params.valid_data.count()),
         )
 
         self.find_parameters()
@@ -141,9 +144,17 @@ if __name__ == '__main__':
     conf = SparkConf().setAppName('{0} - Recommender'.format(SETTINGS.spark.app_name)).setMaster(SETTINGS.spark.master)
     sc = SparkContext(conf=conf)
 
-    # data_rdd = ClickHouseDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
+    spark = (
+        SparkSession
+        .builder
+        .appName('{0} - Recommender'.format(SETTINGS.spark.app_name))
+        .master(SETTINGS.spark.master)
+        .getOrCreate()
+             )
 
-    data_rdd = FileDataSet(sc, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
+    # data_rdd = ClickHouseSourceDataSet(session=spark, properties=SETTINGS.clickhouse).get_data()
+
+    data_rdd = FileDataSet(spark).get_data(filepath=SETTINGS.file_rating_path)
 
     tuner = AlsTuner(
         spark_context=sc,
