@@ -11,11 +11,6 @@ class MongoDBReceiverDataSet(ReceiverDataSet):
 
     def save_data(self, df: DataFrame, *args, **kwargs):
 
-        # recommendations = DataFrame.map(lambda x: (x[0], [rating.product for rating in x[1]]))
-        #
-        # recommendations_df = (
-        #     self.spark.createDataFrame(recommendations)
-        #     .withColumnRenamed('_1', 'user_id')
-        #     .withColumnRenamed('_2', 'movies_is')
-        # )
-        df.write.mode(self.mode).format(self.format).save()
+        recommendations_df = self.spark.createDataFrame(df).withColumnRenamed('prediction', 'movies_is')
+
+        recommendations_df.write.mode(self.mode).format(self.format).save()

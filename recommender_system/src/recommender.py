@@ -1,4 +1,4 @@
-from src.core.settings import AlsHeadersCol, AlsParameters
+from src.core.settings import AlsHeadersCol, AlsParameters, ClickhouseSettings
 from src.db.receiver.mongodb import MongoDBReceiverDataSet
 from src.db.source.clickhouse import ClickHouseSourceDataSet
 from src.engine.spark import SparkManager
@@ -10,9 +10,11 @@ from pyspark.ml.recommendation import ALS, ALSModel
 from pyspark.sql.functions import col, row_number
 import pyspark.sql.functions as F
 from src.db.source.file_data_source import FileDataSet
+from src.utilities.indexer import Indexer
+from pydantic import BaseModel
 
 
-class AlsRecommender:
+class AlsPredictor:
     spark: SparkSession
     sc: SparkContext
     train_data: DataFrame
@@ -76,26 +78,7 @@ class AlsRecommender:
 
         del dfs_prediction, dfs_prediction_exclude_train, self.train_data
 
-    def get_top_number_items(self):
-
-        window_spec = Window.partitionBy(self.headers_col.user_col).orderBy(col(self.headers_col.rating_col).desc())
-
-        self.items_for_user = (
-            self.top_all.select(
-                self.headers_col.user_col,
-                self.headers_col.item_col,
-                self.headers_col.rating_col,
-                row_number().over(window_spec).alias("rank")
-            )
-            .where(col("rank") <= self.number_top)
-            .groupby(self.headers_col.user_col)
-            .agg(F.collect_list(self.headers_col.item_col).alias(self.headers_col.prediction_col))
-        )
-
-    def mapping_ids(self):
-        pass
-
-    def prepare_recommendations(self):
+    def prepare_predictions(self):
 
         if self.trim_dataset:
             sample_size = SETTINGS.sample_size
@@ -122,9 +105,67 @@ class AlsRecommender:
 
         self.create_inference()
 
-        self.get_top_number_items()
 
-        self.mapping_ids()
+class Recommender:
+    class AlsProperties(BaseModel):
+
+        parameters: AlsParameters
+        headers_col: AlsHeadersCol
+        trim_train_dataset: bool
+        sample_size: int
+        seed: int
+
+    spark: SparkSession
+    data_df: DataFrame
+    indexer: Indexer
+    als_predictor: AlsPredictor
+    als_proper: AlsProperties
+    number_top: int
+    items_for_user: DataFrame
+
+    def __init__(
+        self,
+        spark,
+        als_proper: AlsProperties,
+        number_top: int,
+        clickhouse_properties: ClickhouseSettings = None,
+        file_source_path: str = None
+    ):
+        self.spark = spark
+        self.data_df = ClickHouseSourceDataSet(session=spark, properties=clickhouse_properties).get_data()
+        # self.data_df = FileDataSet(spark).get_data(filename=file_source_path)
+        self.indexer = Indexer(self.data_df, als_proper.headers_col)
+
+        self.als_predictor = AlsPredictor(
+            train_data=self.indexer.string_to_index_als(self.data_df),
+            parameters=als_proper.parameters,
+            headers_col=als_proper.headers_col,
+            number_top=number_top,
+            trim_dataset=als_proper.trim_train_dataset,
+            sample_size=als_proper.sample_size,
+            seed=als_proper.seed,
+        )
+
+    def get_top_number_items(self):
+        predict_all_raw_id = self.indexer.index_to_string_als(self.als_predictor.top_all)
+        window_spec = (
+            Window.partitionBy(self.als_proper.headers_col.user_col)
+            .orderBy(col(self.als_proper.headers_col.rating_col).desc()))
+
+        self.items_for_user = (
+            predict_all_raw_id.select(
+                self.als_proper.headers_col.user_col,
+                self.als_proper.headers_col.item_col,
+                self.als_proper.headers_col.rating_col,
+                row_number().over(window_spec).alias("rank")
+            )
+            .where(col("rank") <= self.number_top)
+            .groupby(self.als_proper.headers_col.user_col)
+            .agg(F.collect_list(self.als_proper.headers_col.item_col).alias(self.als_proper.headers_col.prediction_col))
+        )
+
+    def save_recommendations(self):
+        MongoDBReceiverDataSet().save_data(self.items_for_user)
 
 
 def start_prepare_data():
@@ -137,23 +178,24 @@ def start_prepare_data():
     )
     spark_s.sparkContext.setLogLevel('WARN')
 
-    data_df = ClickHouseSourceDataSet(session=spark_s, properties=SETTINGS.clickhouse).get_data()
-
-    # data_df = FileDataSet(spark_s_in.sparkContext, SETTINGS.base_dir).get_data(filename=SETTINGS.file_rating_path)
-
-    recommender = AlsRecommender(
-        train_data=data_df,
-        parameters=SETTINGS.als.final_parameters,
-        headers_col=SETTINGS.als.headers_col,
+    recommender = Recommender(
+        spark=spark,
+        als_proper=Recommender.AlsProperties(
+            parameters=SETTINGS.als.final_parameters,
+            headers_col=SETTINGS.als.headers_col,
+            trim_train_dataset=SETTINGS.spark.trim_train_dataset,
+            sample_size=SETTINGS.sample_size,
+            seed=SETTINGS.seed
+        ),
         number_top=SETTINGS.number_top,
-        trim_dataset=SETTINGS.spark.trim_train_dataset,
-        sample_size=SETTINGS.sample_size,
-        seed=SETTINGS.seed,
-    )
+        clickhouse_properties=SETTINGS.clickhouse
+        )
 
-    recommender.prepare_recommendations()
+    recommender.als_predictor.prepare_predictions()
 
-    MongoDBReceiverDataSet().save_data(recommender.items_for_user)
+    recommender.get_top_number_items()
+
+    recommender.save_recommendations()
 
     spark_s.stop()
 

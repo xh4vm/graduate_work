@@ -1,5 +1,5 @@
 import os
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 import json
 
 from src.db.source.base import SourceDataSet
@@ -8,7 +8,7 @@ from src.db.source.base import SourceDataSet
 class FileDataSet(SourceDataSet):
     dataset_folder_path = None
 
-    def __init__(self, spark, folder_path):
+    def __init__(self, spark: SparkSession):
         self.spark = spark
 
     def get_data(self, *args, **kwargs) -> DataFrame:

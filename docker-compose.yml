@@ -411,7 +411,6 @@ services:
   jupyter-notebook:
     <<: *base_service
     build: ./recommender_system/jupyter-notebook/
-#    image: jupyter/pyspark-notebook:java-17.0.5
     container_name: jupyter-notebook
     hostname: jupyter-notebook
     depends_on:
@@ -570,22 +569,22 @@ services:
       mongo_cluster_initer:
         condition: service_healthy
 
-#  recommender:
-#    <<: *base_service
-#    build: ./recommender_system/
-#    container_name: recommender
-#    restart: unless-stopped
-#    profiles:
-#      - dev_graduate
-#    volumes:
-#      - ./recommender_system/log/celery_worker.log:/opt/content/log/celery_worker.log:rw
-#      - ./recommender_system/log/celery_beat.log:/opt/content/log/celery_beat.log:rw
-#      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.5.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.5.jar
-#    depends_on:
-#      spark-master:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
+  recommender:
+    <<: *base_service
+    build: ./recommender_system/
+    container_name: recommender
+    restart: unless-stopped
+    profiles:
+      - dev_graduate
+    volumes:
+      - ./recommender_system/log/celery_worker.log:/opt/content/log/celery_worker.log:rw
+      - ./recommender_system/log/celery_beat.log:/opt/content/log/celery_beat.log:rw
+      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.5.jar:/opt/jars/clickhouse-native-jdbc-shaded-2.6.5.jar
+    depends_on:
+      spark-master:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 networks:
   graduate:

@@ -15,7 +15,7 @@ def task_prepare_data():
 @celery.on_after_configure.connect
 def setup_recommendations_periodic_task(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(hour=10, minute=30),
+        crontab(hour=1, minute=30),
         task_prepare_data.s(),
         name='Update recommendations every day.',
     )

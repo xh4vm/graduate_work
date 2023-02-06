@@ -58,7 +58,7 @@ class AlsParameters(BaseModel):
 class AlsHeadersCol(BaseModel):
     user_col = 'user_id'
     item_col = 'movie_id'
-    rating_col = 'metrika'
+    rating_col = 'metric'
     prediction_col = "prediction"
 
 
