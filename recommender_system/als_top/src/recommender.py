@@ -9,6 +9,7 @@ from src.engine.spark import SparkManager
 from src.predicter.als_predicter import AlsPredictor
 from src.utilities.indexer import Indexer
 from src.core.logger import logger
+from pyspark.sql import SparkSession
 
 
 class Recommender:
@@ -95,18 +96,10 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def start_prepare_data(data_rdd: RDD) -> RDD:
-
-    logger.info("Initialization")
-    spark = SparkManager(master=SETTINGS.spark.master)
-
-    spark_s = spark.init_spark(
-        app_name=SETTINGS.spark.app_name,
-        config_list=SETTINGS.spark.config_list,
-    )
+def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> RDD:
 
     logger.info("Get dataframe")
-    data_df = spark_s.createDataFrame(
+    data_df = spark.createDataFrame(
         data_rdd,
         list(SETTINGS.als.headers_col.dict(exclude={'prediction_col'}).values())
     )
@@ -130,6 +123,9 @@ def start_prepare_data(data_rdd: RDD) -> RDD:
 
     logger.info("Add raw top movies")
     recommender.add_raw_top_movies()
+
+    recommender.items_for_user.cache()
+    recommender.items_for_user.count()
 
     return recommender.items_for_user.rdd
 
