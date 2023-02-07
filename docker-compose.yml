@@ -316,7 +316,6 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/spark/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
     profiles:
       - dev_graduate
       - prod
@@ -379,6 +378,19 @@ services:
       - dev_graduate
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
+
+  recommender_grpc:
+    <<: *base_service
+    build: ./recommender_system/grpc
+    container_name: recommender_grpc
+    volumes:
+      - ./recommender_system/grpc:/opt/grpc
+    env_file: .env
+    profiles: 
+      - dev_graduate
+      - prod
+    expose:
+      - ${RECOMMENDER_GRPC_PORT}
 
 
 networks:
