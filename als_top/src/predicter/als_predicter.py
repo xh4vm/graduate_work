@@ -1,23 +1,14 @@
-from pyspark import SparkContext
 from pyspark.ml.recommendation import ALS, ALSModel
-from pyspark.sql import DataFrame, SparkSession
-from src.core.config import SETTINGS
+from pyspark.sql import DataFrame
 from src.core.settings import AlsHeadersCol, AlsParameters
-
-# from src.core.settings import ClickhouseSettings
 
 
 class AlsPredictor:
-    spark: SparkSession
-    sc: SparkContext
     train_data: DataFrame
     items_for_user: DataFrame
     top_all: DataFrame
-    trim_dataset: bool
-    sample_size: int = None
     parameters: AlsParameters
     headers_col: AlsHeadersCol
-    number_top: int
     seed: int
     model: ALSModel = None
 
@@ -26,18 +17,11 @@ class AlsPredictor:
         train_data: DataFrame,
         parameters: AlsParameters,
         headers_col: AlsHeadersCol,
-        number_top: int,
         seed:  int,
-        trim_dataset: bool = False,
-        sample_size: int = None,
-
     ):
         self.train_data = train_data
-        self.trim_dataset = trim_dataset
-        self.sample_size = sample_size
         self.parameters = parameters
         self.headers_col = headers_col
-        self.number_top = number_top
         self.seed = seed
 
     def create_inference(self):
@@ -72,11 +56,6 @@ class AlsPredictor:
         del dfs_prediction, dfs_prediction_exclude_train, self.train_data
 
     def prepare_predictions(self):
-
-        if self.trim_dataset:
-            sample_size = SETTINGS.sample_size
-            fraction = sample_size / self.train_data.count()
-            self.train_data = self.train_data.sample(False, fraction, self.seed)
 
         als = ALS(
             rank=self.parameters.rank,
