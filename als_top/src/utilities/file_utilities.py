@@ -12,7 +12,7 @@ def get_data_from_json(file_path):
         return json.load(json_file)
 
 
-def write_best_parameters(parameters: dict, file_path: str):
+def write_best_parameters(parameters, file_path):
 
     parameters_file = os.path.join(file_path)
     json_string = json.dumps(parameters)

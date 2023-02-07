@@ -17,38 +17,10 @@ class SparkSettings(CommonSettings):
     master_host: str
     master_port: int
     app_name: str
-    trim_train_dataset: bool = False
     config_list: list = (('spark.driver.extraJavaOptions', '-Xss16m'), ('spark.executor.extraJavaOptions', '-Xss16m'))
 
     class Config:
         env_prefix = 'SPARK_'
-
-
-class ClickhouseSettings(CommonSettings):
-    url: str
-    user: str
-    password: str = ''
-    driver = 'com.github.housepower.jdbc.ClickHouseDriver'
-    query_file_path: str
-    query: str = None
-    config_list: list = (('spark.jars', '/opt/jars/clickhouse-native-jdbc-shaded-2.6.4.jar'),)
-
-    class Config:
-        env_prefix = 'CLICKHOUSE_'
-
-
-class MongoSettings(CommonSettings):
-    connect_string: str
-    databases: dict
-    collection: str
-    create_collections_commands_json_file: str
-    create_collections_indexes_commands_json_file: str
-    config_list: list = (('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2'),)
-    save_mode = 'overwrite'
-    save_format = "com.mongodb.spark.sql.DefaultSource"
-
-    class Config:
-        env_prefix = 'MONGO_'
 
 
 class AlsParameters(BaseModel):
@@ -56,6 +28,7 @@ class AlsParameters(BaseModel):
     regular: float = 0.1
     iter: int = 5
     alpha: float = 10.0
+    dist: float = 0.0
 
 
 class AlsHeadersCol(BaseModel):
@@ -79,37 +52,14 @@ class AlsSettings(CommonSettings):
         env_prefix = 'ALS_'
 
 
-class RedisSettings(CommonSettings):
-    host: str
-    port: int
-
-    class Config:
-        env_prefix = 'REDIS_'
-
-
-REDIS_CONFIG = RedisSettings()
-
-
-class CelerySettings(BaseModel):
-    name = 'recommender_tasks'
-    broker = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
-    backend = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
-
-
 class Settings(CommonSettings):
     """Class main settings."""
     number_top: int = 30
     root_dir = ROOT_DIR
     base_dir = BASE_DIR
     spark = SparkSettings().parse_obj(SparkSettings().dict())
-    clickhouse = ClickhouseSettings().parse_obj(ClickhouseSettings().dict())
-    mongo = MongoSettings().parse_obj(MongoSettings().dict())
     als = AlsSettings().parse_obj(AlsSettings().dict())
-    celery = CelerySettings().parse_obj(CelerySettings().dict())
-    sample_size = 1000
     seed = 1001
-    backoff_max_tries = 3
-    file_rating_path = '/opt/work/jupyter-notebook/work/ratings_100.csv'
     prediction_movies_col = "movies_id"
 
     class Config:
