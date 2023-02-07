@@ -68,6 +68,10 @@ x-spark-worker: &base_spark_worker
     - SPARK_RPC_ENCRYPTION_ENABLED=no
     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
     - SPARK_SSL_ENABLED=no
+  profiles:
+    - dev_graduate
+    - prod
+    - spark
 
 x-base-mongodb-cluster-unit: &base-mongodb_cluster-unit
   <<: *base_service
@@ -119,6 +123,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -141,6 +146,7 @@ services:
       - dev_ugc
       - dev_graduate
       - prod
+      - spark
     volumes:
       - redis-data:/data
 
@@ -152,6 +158,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -366,6 +373,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     expose:
       - ${SPARK_MASTER_WEB_PORT}
       - ${SPARK_MASTER_PORT}
@@ -386,27 +394,18 @@ services:
     <<: *base_spark_worker
     container_name: spark-worker01
     hostname: spark-worker01
-    profiles:
-      - dev_graduate
-      - prod
 
   spark-worker02:
     <<: *base_service
     <<: *base_spark_worker
     container_name: spark-worker02
     hostname: spark-worker02
-    profiles:
-      - dev_graduate
-      - prod
 
   spark-worker03:
     <<: *base_service
     <<: *base_spark_worker
     container_name: spark-worker03
     hostname: spark-worker03
-    profiles:
-      - dev_graduate
-      - prod
     
   jupyter-notebook:
     <<: *base_service
@@ -425,9 +424,9 @@ services:
       - ./recommender_system/spark/clickhouse-jdbc-0.3.2.jar:/opt/jars/clickhouse-jdbc-0.3.2.jar
     profiles:
       - dev_graduate
+      - spark
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
-
 
   mongors1n1:
     <<: *base-mongodb_cluster-unit
