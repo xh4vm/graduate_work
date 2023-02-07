@@ -14,11 +14,20 @@ def ch_conn_is_alive(ch_conn: Clickhouse) -> bool:
         return False
 
 
-class ClickhouseIniter:
-    def __init__(self, host: str, port: int, conn: Optional[Clickhouse] = None) -> None:
+class ClickhouseClient:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        user:str = 'default',
+        password: str = '',
+        conn: Optional[Clickhouse] = None
+    ) -> None:
         self._conn: Clickhouse = conn
         self._host: str = host
         self._port: int = port
+        self._user: str = user
+        self._password: str = password
 
     @property
     def conn(self) -> Clickhouse:
@@ -35,7 +44,7 @@ class ClickhouseIniter:
             logger.info('Closing already exists clickhouse connector...')
             self._conn.disconnect()
 
-        return Clickhouse(host=self._host, port=self._port)
+        return Clickhouse(host=self._host, port=self._port, user=self._user, password=self._password)
 
     @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
     def create(self, ddl_file: str):

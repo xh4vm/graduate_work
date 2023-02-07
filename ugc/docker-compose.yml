@@ -27,6 +27,7 @@ x-base-clickhouse-node: &base-clickhouse-node
   mem_limit: 1g
   expose:
     - 9000
+    - 8123
   ulimits:
     memlock:
       soft: -1
@@ -227,6 +228,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./backend/clickhouse_initer/mapping:/opt/clickhouse_initer/mapping:ro
+      - ./backend/clickhouse_initer/data:/opt/clickhouse_initer/data:ro
     depends_on:
       clickhouse-node1:
         condition: service_healthy
@@ -249,11 +251,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./clickhouse/config/node1/users.xml:/etc/clickhouse-server/users.xml
+      - ./clickhouse/config/node1/config.d:/etc/clickhouse-server/config.d
+      - ./clickhouse/config/node1/config.xml:/etc/clickhouse-server/config.xml
       - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node1:/etc/clickhouse-server
-    ports:
-      - "9000:9000"
 
   clickhouse-node2:
     <<: *base-clickhouse-node
@@ -264,10 +265,12 @@ services:
       - dev_graduate
       - prod
     volumes:
-      - ./clickhouse/initdb:/docker-entrypoint-initdb.d
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
       - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node2:/etc/clickhouse-server
-
+      - ./clickhouse/config/node2/users.xml:/etc/clickhouse-server/users.xml
+      - ./clickhouse/config/node2/config.d:/etc/clickhouse-server/config.d
+      - ./clickhouse/config/node2/config.xml:/etc/clickhouse-server/config.xml
 
   clickhouse-node3:
     <<: *base-clickhouse-node
@@ -280,9 +283,11 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node3:/etc/clickhouse-server
+      - ./clickhouse/config/node3/users.xml:/etc/clickhouse-server/users.xml
+      - ./clickhouse/config/node3/config.d:/etc/clickhouse-server/config.d
+      - ./clickhouse/config/node3/config.xml:/etc/clickhouse-server/config.xml
+
 
 
   clickhouse-node4:
@@ -296,9 +301,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node4:/etc/clickhouse-server
+      - ./clickhouse/config/node2/users.xml:/etc/clickhouse-server/users.xml
+      - ./clickhouse/config/node4/config.d:/etc/clickhouse-server/config.d
+      - ./clickhouse/config/node4/config.xml:/etc/clickhouse-server/config.xml
 
 
 networks:
