@@ -7,6 +7,12 @@ x-base-service: &base_service
   networks:
     - ugc
 
+x-default-service: &default-service
+  <<: *base_service
+  env_file: .env
+  entrypoint: "bash -c"
+  command: "exit 0"
+
 x-redis: &base_redis
   <<: *base_service
   image: redis:7.0-alpine
@@ -20,10 +26,15 @@ x-redis: &base_redis
     timeout: 10s
     retries: 5
 
-x-base-clickhouse-node: &base-clickhouse-node
+x-clickhouse-default-node: &clickhouse-default-node
   <<: *base_service
-  image: yandex/clickhouse-server:22.1
+  image: clickhouse-default-node
   env_file: .env
+  profiles:
+    - clickhouse
+    - dev_ugc
+    - dev_graduate
+    - prod
   mem_limit: 1g
   expose:
     - 9000
@@ -32,14 +43,16 @@ x-base-clickhouse-node: &base-clickhouse-node
     memlock:
       soft: -1
       hard: -1
-  depends_on:
-    - zookeeper-clickhouse
   healthcheck:
     test: curl http://x-base-clickhouse-node:8123 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
     interval: 30s
     timeout: 10s
     retries: 5
-  
+
+x-clickhouse-default-node-with-keeper: &clickhouse-default-node-with-keeper
+  <<: *clickhouse-default-node
+  image: clickhouse-default-node-with-keeper
+
 x-base-kafka: &base_kafka
   <<: *base_service
   image: confluentinc/cp-kafka:7.3.0
@@ -49,6 +62,43 @@ x-base-kafka: &base_kafka
     - ./kafka/start.sh:/tmp/start.sh
   command: "bash -c 'if [ ! -f /tmp/start.sh ]; then echo \"ERROR: Did you forget the start.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/start.sh && /etc/confluent/docker/run ; fi'"
 
+x-airflow-common:
+  &airflow-common
+  <<: *base_service
+  profiles:
+    - dev_ugc
+    - dev_graduate
+    - prod
+  build:
+    context: ./
+    dockerfile: ./backend/apache_airflow_etl/Dockerfile
+    args:
+      CH_INIT_DATA_PATH: ${CH_INIT_DATA_PATH}
+  env_file: .env
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
+  volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+      - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
 
 services:
 
@@ -190,29 +240,29 @@ services:
       timeout: 30s
       retries: 15
 
-  zookeeper-clickhouse:
-    <<: *base_service
-    image: confluentinc/cp-zookeeper:7.3.0
-    hostname: zookeeper-clickhouse
-    container_name: zookeeper-clickhouse
-    profiles:
-      - clickhouse
-      - dev_ugc
-      - dev_graduate
-      - prod
-    environment:
-      ZOOKEEPER_ID: 2
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - clickhouse-zookeeper:/var/lib/zookeeper
-    mem_limit: 1g
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+#  zookeeper-clickhouse:
+#    <<: *base_service
+#    image: confluentinc/cp-zookeeper:7.3.0
+#    hostname: zookeeper-clickhouse
+#    container_name: zookeeper-clickhouse
+#    profiles:
+#      - clickhouse
+#      - dev_ugc
+#      - dev_graduate
+#      - prod
+#    environment:
+#      ZOOKEEPER_ID: 2
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_TICK_TIME: 2000
+#    volumes:
+#      - /etc/localtime:/etc/localtime:ro
+#      - /etc/timezone:/etc/timezone:ro
+#      - clickhouse-zookeeper:/var/lib/zookeeper
+#    mem_limit: 1g
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
 
 
   clickhouse-initer:
@@ -239,73 +289,273 @@ services:
       clickhouse-node4:
         condition: service_healthy
  
+  clickhouse-default-node:
+    <<: *default-service
+    build:
+      context: .
+      dockerfile: ./clickhouse/node.Dockerfile
+      args:
+        - CH_SERVER_IMG_VER=${CH_SERVER_IMG_VER}
+    image: clickhouse-default-node
+    volumes:
+      - clickhouse_default_node_data:/var/lib/clickhouse
+
+  clickhouse-default-node-with-keeper:
+    <<: *default-service
+    build:
+      context: .
+      dockerfile: ./clickhouse/node-keeper.Dockerfile
+      args:
+        - CH_SERVER_IMG_VER=${CH_SERVER_IMG_VER}
+    image: clickhouse-default-node-with-keeper
+    volumes:
+      - clickhouse_default_node_with_keeper_data:/var/lib/clickhouse
 
   clickhouse-node1:
-    <<: *base-clickhouse-node
-    container_name: clickhouse-node1
-    profiles:
-      - clickhouse
-      - dev_ugc
-      - dev_graduate
-      - prod
+    <<: *clickhouse-default-node-with-keeper
+    environment:
+      CH_NODE_HOST_NAME: clickhouse-node1
+      CH_NODE_SHARD_ID: 1
+      CH_NODE_REPLICA_NAME: clickhouse-node1
+      CH_KEEPER_SERVER_ID: 1
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/config/node1/users.xml:/etc/clickhouse-server/users.xml
-      - ./clickhouse/config/node1/config.d:/etc/clickhouse-server/config.d
-      - ./clickhouse/config/node1/config.xml:/etc/clickhouse-server/config.xml
-      - ./clickhouse/config/metrika.xml:/etc/metrika.xml
+      - clickhouse_node1_data:/var/lib/clickhouse
+    ports:
+      - "9000:9000"
+      - "8123:8123"
 
   clickhouse-node2:
-    <<: *base-clickhouse-node
-    container_name: clickhouse-node2
-    profiles:
-      - clickhouse
-      - dev_ugc
-      - dev_graduate
-      - prod
+    <<: *clickhouse-default-node
+    environment:
+      CH_NODE_HOST_NAME: clickhouse-node2
+      CH_NODE_SHARD_ID: 1
+      CH_NODE_REPLICA_NAME: clickhouse-node2
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node2/users.xml:/etc/clickhouse-server/users.xml
-      - ./clickhouse/config/node2/config.d:/etc/clickhouse-server/config.d
-      - ./clickhouse/config/node2/config.xml:/etc/clickhouse-server/config.xml
+      - clickhouse_node2_data:/var/lib/clickhouse
+    depends_on:
+      clickhouse-keeper-quorum:
+        condition: service_healthy
+      clickhouse-node1:
+        condition: service_healthy
+    ports:
+      - "9001:9000"
+      - "8124:8123"
 
   clickhouse-node3:
-    <<: *base-clickhouse-node
-    container_name: clickhouse-node3
-    profiles:
-      - clickhouse
-      - dev_ugc
-      - dev_graduate
-      - prod
+    <<: *clickhouse-default-node-with-keeper
+    environment:
+      CH_NODE_HOST_NAME: clickhouse-node3
+      CH_NODE_SHARD_ID: 2
+      CH_NODE_REPLICA_NAME: clickhouse-node3
+      CH_KEEPER_SERVER_ID: 2
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node3/users.xml:/etc/clickhouse-server/users.xml
-      - ./clickhouse/config/node3/config.d:/etc/clickhouse-server/config.d
-      - ./clickhouse/config/node3/config.xml:/etc/clickhouse-server/config.xml
-
-
+      - clickhouse_node3_data:/var/lib/clickhouse
+    ports:
+      - "9002:9000"
+      - "8125:8123"
 
   clickhouse-node4:
-    <<: *base-clickhouse-node
-    container_name: clickhouse-node4
+    <<: *clickhouse-default-node
+    environment:
+      CH_NODE_HOST_NAME: clickhouse-node4
+      CH_NODE_SHARD_ID: 2
+      CH_NODE_REPLICA_NAME: clickhouse-node4
+    volumes:
+      - clickhouse_node4_data:/var/lib/clickhouse
+    ports:
+      - "9003:9000"
+      - "8126:8123"
+    depends_on:
+      clickhouse-keeper-quorum:
+        condition: service_healthy
+      clickhouse-node3:
+        condition: service_healthy
+
+  clickhouse-keeper-quorum:
+    <<: *clickhouse-default-node-with-keeper
+    environment:
+      CH_NODE_HOST_NAME: clickhouse-keeper-quorum
+      CH_NODE_SHARD_ID: 0
+      CH_NODE_REPLICA_NAME: clickhouse-keeper-quorum
+      CH_KEEPER_SERVER_ID: 3
+    volumes:
+      - clickhouse_keeper_quorum_data:/var/lib/clickhouse
+    depends_on:
+      - clickhouse-node1
+      - clickhouse-node3
+
+  postgres:
+    <<: *base_service
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     profiles:
-      - clickhouse
       - dev_ugc
       - dev_graduate
       - prod
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - ./clickhouse/config/metrika.xml:/etc/metrika.xml
-      - ./clickhouse/config/node2/users.xml:/etc/clickhouse-server/users.xml
-      - ./clickhouse/config/node4/config.d:/etc/clickhouse-server/config.d
-      - ./clickhouse/config/node4/config.xml:/etc/clickhouse-server/config.xml
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "airflow" ]
+      interval: 5s
+      retries: 5
+    restart: always
 
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: [ "CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"' ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      <<: *airflow-common-env
+      # Required to handle warm shutdown of the celery workers properly
+      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    healthcheck:
+      test: [ "CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"' ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        function ver() {
+          printf "%04d%04d%04d%04d" $${1//./ }
+        }
+        airflow_version=$$(AIRFLOW__LOGGING__LOGGING_LEVEL=INFO && gosu airflow airflow version)
+        airflow_version_comparable=$$(ver $${airflow_version})
+        min_airflow_version=2.2.0
+        min_airflow_version_comparable=$$(ver $${min_airflow_version})
+        if (( airflow_version_comparable < min_airflow_version_comparable )); then
+          echo
+          echo -e "\033[1;31mERROR!!!: Too old Airflow version $${airflow_version}!\e[0m"
+          echo "The minimum Airflow version supported: $${min_airflow_version}. Only use this or higher!"
+          echo "airflow_version_comparable: $${airflow_version_comparable}"
+          echo "min_airflow_version_comparable: $${min_airflow_version_comparable}"
+          echo "airflow_version: $${airflow_version}"
+          echo "min_airflow_version: $${min_airflow_version}"
+          echo
+          exit 1
+        fi
+        if [[ -z "${AIRFLOW_UID}" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+          echo "If you are on Linux, you SHOULD follow the instructions below to set "
+          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+          echo "For other operating systems you can get rid of the warning with manually created .env file:"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
+          echo
+        fi
+        one_meg=1048576
+        mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
+        cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
+        disk_available=$$(df / | tail -1 | awk '{print $$4}')
+        warning_resources="false"
+        if (( mem_available < 4000 )) ; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
+          echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
+          echo
+          warning_resources="true"
+        fi
+        if (( cpus_available < 2 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
+          echo "At least 2 CPUs recommended. You have $${cpus_available}"
+          echo
+          warning_resources="true"
+        fi
+        if (( disk_available < one_meg * 10 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
+          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
+          echo
+          warning_resources="true"
+        fi
+        if [[ $${warning_resources} == "true" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
+          echo "Please follow the instructions to increase amount of resources available:"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
+          echo
+        fi
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    user: "0:0"
+    depends_on:
+      clickhouse-node1:
+        condition: service_healthy
+      clickhouse-node2:
+        condition: service_healthy
+      clickhouse-node3:
+        condition: service_healthy
+      clickhouse-node4:
+        condition: service_healthy
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
 
 networks:
   ugc:
@@ -314,4 +564,11 @@ networks:
 
 volumes:
   redis-data:
-  clickhouse-zookeeper:
+  clickhouse_default_node_data:
+  clickhouse_default_node_with_keeper_data:
+  clickhouse_keeper_quorum_data:
+  clickhouse_node1_data:
+  clickhouse_node2_data:
+  clickhouse_node3_data:
+  clickhouse_node4_data:
+  postgres-db-volume:
