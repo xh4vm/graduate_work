@@ -1,7 +1,4 @@
-import os
 from pyspark.sql import DataFrame, SparkSession
-import json
-
 from src.db.source.base import SourceDataSet
 
 
@@ -12,5 +9,11 @@ class FileDataSet(SourceDataSet):
         self.spark = spark
 
     def get_data(self, *args, **kwargs) -> DataFrame:
-        return self.spark.read.load(kwargs['filepath'], format='csv', header=True, inferSchema=True)
-
+        data = self.spark.read.load(kwargs['filepath'], format='csv', header=True, inferSchema=True)
+        return (
+            data
+            .withColumnRenamed('userId', 'user_id')
+            .withColumnRenamed('movieId', 'movie_id')
+            .withColumnRenamed('rating', 'metric')
+            .select('user_id', 'movie_id', 'metric')
+        )

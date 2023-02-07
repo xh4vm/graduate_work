@@ -1,9 +1,5 @@
-import os
-from pyspark.sql import DataFrame
-import json
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from src.core.settings import ClickhouseSettings
-
 from src.db.source.base import SourceDataSet
 
 
@@ -22,6 +18,3 @@ class ClickHouseSourceDataSet(SourceDataSet):
             .option('query', self.properties.query) \
             .load()
         return data_frame
-
-
-

@@ -1,16 +1,12 @@
-from pyspark.sql import DataFrame, SparkSession
-
+from pyspark.sql import DataFrame
 from src.db.receiver.base import ReceiverDataSet
 
 
 class MongoDBReceiverDataSet(ReceiverDataSet):
 
-    def __init__(self):
-        self.mode = 'overwrite'
-        self.format = "com.mongodb.spark.sql.DefaultSource"
+    def __init__(self, mode, sformat):
+        self.mode = mode
+        self.format = sformat
 
     def save_data(self, df: DataFrame, *args, **kwargs):
-
-        recommendations_df = self.spark.createDataFrame(df).withColumnRenamed('prediction', 'movies_is')
-
-        recommendations_df.write.mode(self.mode).format(self.format).save()
+        df.write.mode(self.mode).format(self.format).save()

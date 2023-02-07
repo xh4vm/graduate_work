@@ -1,20 +1,18 @@
 import gc
-from src.db.source.clickhouse import ClickHouseSourceDataSet
-
-from pyspark.sql import SparkSession, DataFrame
-
-from src.core.config import SETTINGS
-from src.core.settings import AlsSettings, AlsHeadersCol
-from src.db.source.file_data_source import FileDataSet
-from loguru import logger
-from tqdm import tqdm
 import itertools
-from pyspark import SparkContext, SparkConf
-from pyspark.ml.recommendation import ALS
-from pydantic import BaseModel
 
-from src.utilities.file_utilities import write_best_parameters
+from loguru import logger
+from pydantic import BaseModel
+from pyspark import SparkConf, SparkContext
 from pyspark.ml.evaluation import RegressionEvaluator
+from pyspark.ml.recommendation import ALS
+from pyspark.sql import DataFrame, SparkSession
+from src.core.config import SETTINGS
+from src.core.settings import AlsHeadersCol, AlsSettings
+# from src.db.source.clickhouse import ClickHouseSourceDataSet
+from src.db.source.file_data_source import FileDataSet
+from src.utilities.file_utilities import write_best_parameters
+from tqdm import tqdm
 
 
 class AlsTuner:
@@ -168,7 +166,3 @@ if __name__ == '__main__':
     tuner.tune_als()
 
     sc.stop()
-
-
-
-

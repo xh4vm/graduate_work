@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseSettings, BaseModel
+from pydantic import BaseModel, BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
@@ -17,7 +17,7 @@ class SparkSettings(CommonSettings):
     master_host: str
     master_port: int
     app_name: str
-    trim_train_dataset: bool = True
+    trim_train_dataset: bool = False
 
     class Config:
         env_prefix = 'SPARK_'
@@ -43,6 +43,8 @@ class MongoSettings(CommonSettings):
     create_collections_commands_json_file: str
     create_collections_indexes_commands_json_file: str
     config_list: list = (('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.2'),)
+    save_mode = 'overwrite'
+    save_format = "com.mongodb.spark.sql.DefaultSource"
 
     class Config:
         env_prefix = 'MONGO_'
@@ -106,8 +108,8 @@ class Settings(CommonSettings):
     sample_size = 1000
     seed = 1001
     backoff_max_tries = 3
-    file_rating_path = 'jupyter-notebook/work/ratings_100.csv'
+    file_rating_path = '/opt/work/jupyter-notebook/work/ratings_100.csv'
+    prediction_movies_col = "movies_id"
 
     class Config:
         env_prefix = 'RECOMMENDER_'
-

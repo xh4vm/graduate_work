@@ -19,4 +19,3 @@ def write_best_parameters(parameters, file_path):
 
     with open(parameters_file, 'w') as outfile:
         outfile.write(json_string)
-

@@ -1,11 +1,7 @@
-import json
 import os
-from os import environ
-from dotenv import load_dotenv
-from pathlib import Path
 
-from src.utilities.file_utilities import get_data_from_json, get_data_from_file
-from src.core.settings import Settings, AlsParameters
+from src.core.settings import AlsParameters, Settings
+from src.utilities.file_utilities import get_data_from_file, get_data_from_json
 
 
 def get_settings():
@@ -34,5 +30,3 @@ SETTINGS.mongo.config_list.extend((
     ('spark.mongodb.output.database', SETTINGS.mongo.databases['db_data']),
     ('spark.mongodb.output.collection', SETTINGS.mongo.collection),
 ))
-
-pass

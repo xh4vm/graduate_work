@@ -13,7 +13,7 @@ repos:
     -   id: flake8
         name: Lint Python files
         description: wemake-python-styleguide enforcement
-        entry:  ./olap_research/vertica/src/.venv/bin/flake8
+        entry:  .venv/bin/flake8
         args: ["--config=setup.cfg", "--max-line-length=119"]
         language: python
         types: [python]
@@ -33,4 +33,3 @@ repos:
 #         name: Check vulnerability of the python code
 #         args: ["-r", "backend/client"]
 #         entry: bandit
-        

@@ -1,109 +1,15 @@
+import pyspark.sql.functions as F
+from pydantic import BaseModel
+from pyspark.sql import DataFrame, SparkSession, Window
+from pyspark.sql.functions import col, row_number
+from src.core.config import SETTINGS
 from src.core.settings import AlsHeadersCol, AlsParameters, ClickhouseSettings
 from src.db.receiver.mongodb import MongoDBReceiverDataSet
 from src.db.source.clickhouse import ClickHouseSourceDataSet
+# from src.db.source.file_data_source import FileDataSet
 from src.engine.spark import SparkManager
-from src.core.config import SETTINGS
-
-from pyspark.sql import SparkSession, DataFrame, Window
-from pyspark import SparkContext, RDD
-from pyspark.ml.recommendation import ALS, ALSModel
-from pyspark.sql.functions import col, row_number
-import pyspark.sql.functions as F
-from src.db.source.file_data_source import FileDataSet
+from src.predicter.als_predicter import AlsPredictor
 from src.utilities.indexer import Indexer
-from pydantic import BaseModel
-
-
-class AlsPredictor:
-    spark: SparkSession
-    sc: SparkContext
-    train_data: DataFrame
-    items_for_user: DataFrame
-    top_all: DataFrame
-    trim_dataset: bool
-    sample_size: int = None
-    parameters: AlsParameters
-    headers_col: AlsHeadersCol
-    number_top: int
-    seed: int
-    model: ALSModel = None
-
-    def __init__(
-        self,
-        train_data: DataFrame,
-        parameters: AlsParameters,
-        headers_col: AlsHeadersCol,
-        number_top: int,
-        seed:  int,
-        trim_dataset: bool = False,
-        sample_size: int = None,
-
-    ):
-        self.train_data = train_data
-        self.trim_dataset = trim_dataset
-        self.sample_size = sample_size
-        self.parameters = parameters
-        self.headers_col = headers_col
-        self.number_top = number_top
-        self.seed = seed
-
-    def create_inference(self):
-        users = self.train_data.select(self.headers_col.user_col).distinct()
-        items = self.train_data.select(self.headers_col.item_col).distinct()
-        user_item = users.crossJoin(items)
-        dfs_prediction = self.model.transform(user_item)
-
-        del users, items, user_item
-
-        dfs_prediction_exclude_train = (
-            dfs_prediction.alias("prediction")
-            .join(
-                self.train_data.alias("train"),
-                (dfs_prediction[self.headers_col.user_col] == self.train_data[self.headers_col.user_col]) &
-                (dfs_prediction[self.headers_col.item_col] == self.train_data[self.headers_col.item_col]),
-                how='outer'
-            )
-        )
-
-        self.top_all = (
-            dfs_prediction_exclude_train.filter(
-                dfs_prediction_exclude_train[f"train.{self.headers_col.rating_col}"].isNull()
-            )
-            .select(
-                'prediction.' + self.headers_col.user_col,
-                'prediction.' + self.headers_col.item_col,
-                'prediction.prediction'
-            )
-        )
-
-        del dfs_prediction, dfs_prediction_exclude_train, self.train_data
-
-    def prepare_predictions(self):
-
-        if self.trim_dataset:
-            sample_size = SETTINGS.sample_size
-            fraction = sample_size / self.train_data.count()
-            self.train_data = self.train_data.sample(False, fraction, self.seed)
-
-        del self.train_data
-
-        als = ALS(
-            rank=self.parameters.rank,
-            maxIter=self.parameters.iter,
-            implicitPrefs=False,
-            regParam=float(self.parameters.regular),
-            alpha=float(self.parameters.alpha),
-            coldStartStrategy='drop',
-            nonnegative=True,
-            seed=self.seed,
-            userCol=self.headers_col.user_col,
-            itemCol=self.headers_col.item_col,
-            ratingCol=self.headers_col.rating_col,
-            )
-
-        self.model = als.fit(self.train_data)
-
-        self.create_inference()
 
 
 class Recommender:
@@ -122,12 +28,14 @@ class Recommender:
     als_proper: AlsProperties
     number_top: int
     items_for_user: DataFrame
+    prediction_movies_col: str
 
     def __init__(
         self,
         spark,
         als_proper: AlsProperties,
         number_top: int,
+        prediction_movies_col,
         clickhouse_properties: ClickhouseSettings = None,
         file_source_path: str = None
     ):
@@ -135,6 +43,7 @@ class Recommender:
         self.data_df = ClickHouseSourceDataSet(session=spark, properties=clickhouse_properties).get_data()
         # self.data_df = FileDataSet(spark).get_data(filename=file_source_path)
         self.indexer = Indexer(self.data_df, als_proper.headers_col)
+        self.prediction_movies_col = prediction_movies_col
 
         self.als_predictor = AlsPredictor(
             train_data=self.indexer.string_to_index_als(self.data_df),
@@ -150,22 +59,54 @@ class Recommender:
         predict_all_raw_id = self.indexer.index_to_string_als(self.als_predictor.top_all)
         window_spec = (
             Window.partitionBy(self.als_proper.headers_col.user_col)
-            .orderBy(col(self.als_proper.headers_col.rating_col).desc()))
+            .orderBy(col(self.als_proper.headers_col.prediction_col).desc()))
 
         self.items_for_user = (
             predict_all_raw_id.select(
                 self.als_proper.headers_col.user_col,
                 self.als_proper.headers_col.item_col,
-                self.als_proper.headers_col.rating_col,
+                self.als_proper.headers_col.prediction_col,
                 row_number().over(window_spec).alias("rank")
             )
             .where(col("rank") <= self.number_top)
             .groupby(self.als_proper.headers_col.user_col)
-            .agg(F.collect_list(self.als_proper.headers_col.item_col).alias(self.als_proper.headers_col.prediction_col))
+            .agg(
+                F.collect_list(self.als_proper.headers_col.item_col)
+                .alias(self.prediction_movies_col)
+            )
         )
 
-    def save_recommendations(self):
-        MongoDBReceiverDataSet().save_data(self.items_for_user)
+    def add_raw_top_movies(self):
+
+        window_spec = Window.orderBy(col('sum({0})'.format(self.als_proper.headers_col.rating_col)).desc())
+
+        raw_top_movies = (
+            self.data_df
+            .select(
+                self.als_proper.headers_col.item_col,
+                self.als_proper.headers_col.rating_col,
+            )
+            .groupby(self.als_proper.headers_col.item_col)
+            .sum(self.als_proper.headers_col.rating_col)
+            .orderBy(col('sum({0})'.format(self.als_proper.headers_col.rating_col)).desc())
+            .select(
+                self.als_proper.headers_col.item_col,
+                'sum({0})'.format(self.als_proper.headers_col.rating_col),
+                row_number().over(window_spec).alias("rank")
+            )
+            .where(col("rank") <= self.number_top)
+            .withColumn(self.als_proper.headers_col.user_col, F.lit('0'))
+            .groupby(self.als_proper.headers_col.user_col)
+            .agg(
+                F.collect_list(self.als_proper.headers_col.item_col)
+                .alias(self.prediction_movies_col)
+            )
+        )
+
+        self.items_for_user = self.items_for_user.union(raw_top_movies)
+
+    def save_recommendations(self, save_mode: str, save_format: str):
+        MongoDBReceiverDataSet(save_mode, save_format).save_data(self.items_for_user)
 
 
 def start_prepare_data():
@@ -188,14 +129,17 @@ def start_prepare_data():
             seed=SETTINGS.seed
         ),
         number_top=SETTINGS.number_top,
-        clickhouse_properties=SETTINGS.clickhouse
+        clickhouse_properties=SETTINGS.clickhouse,
+        prediction_movies_col=SETTINGS.prediction_movies_col,
         )
 
     recommender.als_predictor.prepare_predictions()
 
     recommender.get_top_number_items()
 
-    recommender.save_recommendations()
+    recommender.add_raw_top_movies()
+
+    recommender.save_recommendations(SETTINGS.mongo.save_mode, SETTINGS.mongo.save_format)
 
     spark_s.stop()
 
@@ -203,4 +147,3 @@ def start_prepare_data():
 if __name__ == '__main__':
 
     start_prepare_data()
-
