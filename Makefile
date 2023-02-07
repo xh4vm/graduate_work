@@ -91,3 +91,13 @@ clean-pyc:
 clean-all-dockers:
 	$(call log,Run stop remove and cleaning memory)
 	T=$$(docker ps -q); docker stop $$T; docker rm $$T; docker container prune -f
+
+.PHONY: interactive build docker spark services
+spark:
+	$(call log,Build grad containers)
+	docker-compose --profile spark up --build
+
+.PHONY: interactive up docker spark services
+spark-up:
+	$(call log,Build grad containers)
+	docker-compose --profile spark up
