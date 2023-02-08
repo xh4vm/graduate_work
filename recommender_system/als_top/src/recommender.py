@@ -97,15 +97,7 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def save_rdd_to_file(rdd: RDD, filepath: str):
-    rdd.saveAsTextFile(filepath)
-
-
-def load_rdd_from_file(sc: SparkContext, filepath: str) -> RDD:
-    return sc.textFile('file:///' + filepath)
-
-
-def start_prepare_data(spark: SparkSession,  data_rdd: RDD, save_mode: bool = False, demo_mode: bool = False) -> RDD:
+def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> RDD:
 
     logger.info("Get dataframe")
     data_df = spark.createDataFrame(
