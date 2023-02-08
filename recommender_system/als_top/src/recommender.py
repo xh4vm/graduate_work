@@ -1,7 +1,8 @@
 import pyspark.sql.functions as F
 from pydantic import BaseModel
-from pyspark import RDD
-from pyspark.sql import DataFrame, Window
+from pyspark import SparkContext, RDD
+from pyspark.sql import DataFrame
+from pyspark.sql import Window
 from pyspark.sql.functions import col, row_number
 from src.core.config import SETTINGS
 from src.core.settings import AlsHeadersCol, AlsParameters
@@ -33,7 +34,7 @@ class Recommender:
         number_top: int,
         prediction_movies_col,
     ):
-        self.data_df = data_df
+        self.data_df = data_df.cache()
         self.indexer = Indexer(self.data_df, als_proper.headers_col)
         self.prediction_movies_col = prediction_movies_col
         self.number_top = number_top
@@ -96,7 +97,15 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> RDD:
+def save_rdd_to_file(rdd: RDD, filepath: str):
+    rdd.saveAsTextFile(filepath)
+
+
+def load_rdd_from_file(sc: SparkContext, filepath: str) -> RDD:
+    return sc.textFile('file:///' + filepath)
+
+
+def start_prepare_data(spark: SparkSession,  data_rdd: RDD, save_mode: bool = False, demo_mode: bool = False) -> RDD:
 
     logger.info("Get dataframe")
     data_df = spark.createDataFrame(

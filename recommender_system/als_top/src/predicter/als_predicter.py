@@ -51,6 +51,7 @@ class AlsPredictor:
                 'prediction.' + self.headers_col.item_col,
                 'prediction.prediction'
             )
+            .cache()
         )
 
         del dfs_prediction, dfs_prediction_exclude_train, self.train_data
