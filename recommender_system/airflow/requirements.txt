@@ -1,0 +1,8 @@
+backoff==2.2.1
+python-decouple==3.7
+apache-airflow-providers-apache-spark==4.0.0
+pandas==1.5.3
+loguru==0.6.0
+clickhouse_driver==0.2.5
+pydantic==1.10.4
+orjson==3.6.6
