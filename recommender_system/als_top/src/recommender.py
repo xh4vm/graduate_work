@@ -114,7 +114,7 @@ def save_from_csv(data_df: DataFrame, path_to_csv: str):
 
 def start_prepare_data(
     spark: SparkSession,
-    data_rdd: RDD,
+    data_df: DataFrame,
     demo_mode: bool = False,
     save_mode: bool = False,
     path_to_csv_file: str = SETTINGS.path_to_csv,
@@ -124,12 +124,7 @@ def start_prepare_data(
         logger.info('Load demo dataframe')
         return load_from_csv(spark, path_to_csv_file)
 
-    logger.info('Get dataframe')
-    data_df = spark.createDataFrame(
-        data_rdd,
-        list(SETTINGS.als.headers_col.dict(exclude={'prediction_col'}).values())
-    )
-
+    logger.info('Create Recommender')
     recommender = Recommender(
         data_df=data_df,
         als_proper=Recommender.AlsProperties(
