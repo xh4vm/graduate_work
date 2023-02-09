@@ -85,7 +85,7 @@ result_data = start_prepare_data(
     dataframe,
     save_mode=True,
     demo_mode=True,
-    path_to_csv_file='/opt/metadata/als_top_result_real.csv'
+    path_to_csv_file='/tmp/metadata/fake_als_top_result.csv'
 )
 logger.info(result_data.count())
 logger.info(result_data.show(10, False))
