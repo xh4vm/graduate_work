@@ -1,12 +1,10 @@
 import pyspark.sql.functions as F
 from pydantic import BaseModel
-from pyspark import SparkContext, RDD
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.functions import col, row_number
 from src.core.config import SETTINGS
 from src.core.settings import AlsHeadersCol, AlsParameters
-from src.engine.spark import SparkManager
 from src.predicter.als_predicter import AlsPredictor
 from src.utilities.indexer import Indexer
 from src.core.logger import logger

@@ -7,14 +7,18 @@ skinparam sequence {
 
 title New event from any of Online Movies API
 
-collections Producers as api_p order 1 #FFFF99
-participant APINotice as api_n order 3
-queue RabbitMQ as q order 7
-participant Builder as b order 10
-participant Sender as s order 15
-collections "API Auth" as api_a order 20
-database NoticeDB as db order 30
-collections Emails as em order 40 #99FF99
+box Apach Airflow
+collections Producers as api_p order 20 #FFFF99
+participant APINotice as api_n order 30
+participant APINotice as api_ order 40
+end box
+queue RabbitMQ as q order 40
+participant Builder as b order 50
+participant Sender as s order 60
+collections "API Auth" as api_a order 70
+database NoticeDB as db order 80
+collections Emails as em order 90 #99FF99
+actor Frontend as frn order 100
 
 api_p -> api_n: event
 note left
