@@ -7,10 +7,10 @@ from pyspark import RDD
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.recommendation import ALS
 from pyspark.sql import DataFrame, SparkSession
-from src.als_core.config import SETTINGS
-from src.als_core.settings import AlsParameters, AlsSettings
-from src.engine.spark import SparkManager
-from src.utilities.file_utilities import write_best_parameters
+from als_src.als_core.config import SETTINGS
+from als_src.als_core.settings import AlsParameters, AlsSettings
+from als_src.engine.spark import SparkManager
+from als_src.utilities.file_utilities import write_best_parameters
 from tqdm import tqdm
 
 

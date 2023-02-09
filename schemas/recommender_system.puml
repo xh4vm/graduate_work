@@ -3,6 +3,7 @@ autonumber
 skinparam sequence {
 	ParticipantPadding 20
 	MessageAlign center
+	skinparam BoxPadding 20
 }
 
 title New event from any of Online Movies API
@@ -14,16 +15,12 @@ participant ETL as api_n order 20
 participant ALS_Top as als order 30
 participant Saver as sv order 35
 end box
-participant Saver1 as sv1 order 36
 end box
-collections Producers as api_p order 40 #FFFF99
-queue RabbitMQ as q order 50
-participant Builder as b order 55
-participant Sender as s order 60
-collections "API Auth" as api_a order 70
-database NoticeDB as db order 80
-collections Emails as em order 90 #99FF99
-actor Frontend as frn order 100
+collections Clickhouse as cl order 40 #FFFF99
+participant MoviesAdminAPI as a_api order 41
+queue MongoDB as mng order 50
+participant ContentAPI as c_api order 60
+actor Frontend as frn order 70
 
 api_p -> api_n: event
 note left

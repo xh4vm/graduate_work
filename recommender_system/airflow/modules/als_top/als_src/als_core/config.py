@@ -1,7 +1,7 @@
 import os
 
-from src.als_core.settings import AlsParameters, Settings
-from src.utilities.file_utilities import get_data_from_json
+from als_src.als_core.settings import AlsParameters, Settings
+from als_src.utilities.file_utilities import get_data_from_json
 
 
 def get_settings():
