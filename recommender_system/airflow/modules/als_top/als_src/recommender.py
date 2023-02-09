@@ -107,7 +107,7 @@ def load_from_csv(spark: SparkSession, path_to_csv: str) -> DataFrame:
 
 def save_from_csv(data_df: DataFrame, path_to_csv: str):
     pandas_data = data_df.toPandas()
-    pandas_data.to_csv(path_to_csv)
+    pandas_data.to_csv(path_to_csv, mode='overwrite')
 
 
 def start_prepare_data(
