@@ -1,6 +1,6 @@
 from pyspark.ml.recommendation import ALS, ALSModel
 from pyspark.sql import DataFrame
-from src.core.settings import AlsHeadersCol, AlsParameters
+from src.als_core.settings import AlsHeadersCol, AlsParameters
 
 
 class AlsPredictor:

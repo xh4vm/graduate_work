@@ -1,7 +1,7 @@
 from pyspark.ml.feature import StringIndexer
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
-from src.core.settings import AlsHeadersCol
+from src.als_core.settings import AlsHeadersCol
 
 
 class Indexer:

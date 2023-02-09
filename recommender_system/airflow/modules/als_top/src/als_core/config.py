@@ -1,6 +1,6 @@
 import os
 
-from src.core.settings import AlsParameters, Settings
+from src.als_core.settings import AlsParameters, Settings
 from src.utilities.file_utilities import get_data_from_json
 
 

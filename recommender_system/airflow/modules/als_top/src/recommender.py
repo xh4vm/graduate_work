@@ -3,11 +3,11 @@ from pydantic import BaseModel
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.functions import col, row_number
-from src.core.config import SETTINGS
-from src.core.settings import AlsHeadersCol, AlsParameters
+from src.als_core.config import SETTINGS
+from src.als_core.settings import AlsHeadersCol, AlsParameters
 from src.predicter.als_predicter import AlsPredictor
 from src.utilities.indexer import Indexer
-from src.core.logger import logger
+from src.als_core.logger import logger
 from pyspark.sql import SparkSession
 
 
