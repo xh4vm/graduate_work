@@ -53,7 +53,7 @@ class AlsSettings(CommonSettings):
 
 class Settings(CommonSettings):
     """Class main settings."""
-    number_top: int
+    number_top: int = 10
     root_dir = ROOT_DIR
     base_dir = BASE_DIR
     spark = SparkSettings().parse_obj(SparkSettings().dict())
