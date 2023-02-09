@@ -60,7 +60,8 @@ class Settings(CommonSettings):
     als = AlsSettings().parse_obj(AlsSettings().dict())
     seed = 1001
     prediction_movies_col = "movies_id"
-    path_to_csv: str = '/tmp/metadata/als_top_result.csv'
+    path_from_csv: str = '/tmp/metadata/fake_als_top_result.csv'
+    path_to_csv: str = '/tmp/metadata/real_als_top_result.csv'
 
     class Config:
         env_prefix = 'RECOMMENDER_ALS_'

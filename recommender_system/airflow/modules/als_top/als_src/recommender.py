@@ -115,20 +115,20 @@ def start_prepare_data(
     data_df: DataFrame,
     demo_mode: bool = False,
     save_mode: bool = False,
+    path_from_csv_file: str = SETTINGS.path_from_csv,
     path_to_csv_file: str = SETTINGS.path_to_csv,
 ) -> DataFrame:
 
     if demo_mode and save_mode:
-        logger.info('Load demo dataframe from {0}'.format(path_to_csv_file))
-        result = load_from_csv(spark, path_to_csv_file)
-        save_path = 'new_{0}'.format(path_to_csv_file)
-        logger.info('Save demo results as {0}'.format(save_path))
-        save_from_csv(result, save_path)
+        logger.info('Load demo dataframe from {0}'.format(path_from_csv_file))
+        result = load_from_csv(spark, path_from_csv_file)
+        logger.info('Save demo results as {0}'.format(path_to_csv_file))
+        save_from_csv(result, path_to_csv_file)
         return result
 
     if demo_mode:
-        logger.info('Load demo dataframe from {0}'.format(path_to_csv_file))
-        return load_from_csv(spark, path_to_csv_file)
+        logger.info('Load demo dataframe from {0}'.format(path_from_csv_file))
+        return load_from_csv(spark, path_from_csv_file)
 
     logger.info('Create Recommender')
     recommender = Recommender(
