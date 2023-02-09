@@ -8,7 +8,7 @@ skinparam sequence {
 
 title New event from any of Online Movies API
 
-box Apach Airflow
+box Apache Airflow
 participant Scheduler as sch order 10
 box DAG
 participant ETL as etl order 20
@@ -16,8 +16,9 @@ participant ALS_Top as als order 30
 participant Saver as sv order 35
 end box
 end box
-collections Clickhouse as cl order 40 #FFFF99
-participant MoviesAdminAPI as a_api order 41
+collections Clickhouse as cl order 40
+collections "Apache Spark" as spark order 41 #FFFF99
+participant MoviesAdminAPI as a_api order 42
 queue MongoDB as mng order 50
 participant ContentAPI as c_api order 60
 actor Frontend as frn order 70
