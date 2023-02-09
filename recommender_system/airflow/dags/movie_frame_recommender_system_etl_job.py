@@ -84,8 +84,6 @@ result_data = start_prepare_data(
     spark,
     dataframe,
     save_mode=True,
-    demo_mode=True,
-    path_from_csv_file='/tmp/metadata/fake_als_top_result.csv',
     path_to_csv_file='/tmp/metadata/real_als_top_result.csv'
 )
 logger.info(result_data.count())
