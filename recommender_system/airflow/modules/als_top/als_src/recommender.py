@@ -110,7 +110,7 @@ def save_from_csv(data_df: DataFrame, path_to_csv: str):
     pandas_data.to_csv(path_to_csv)
 
 
-def start_prepare_data(
+def prepare_data(
     spark: SparkSession,
     data_df: DataFrame,
     demo_mode: bool = False,
