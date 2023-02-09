@@ -1,3 +1,7 @@
+[![Code style: black](https://badgen.net/badge/codestyle/black/black)](https://github.com/psf/black)
+[![PyPI pyversions](https://badgen.net/badge/python/3.10/green)](https://www.python.org)
+
+
 # Проектная работа: диплом
 
 [Ссылка на работу](https://github.com/xh4vm/graduate_work)
