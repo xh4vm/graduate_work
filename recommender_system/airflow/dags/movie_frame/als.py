@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from loguru import logger
+from modules.als_top.als_src.recommender import prepare_data
 
 
 spark = SparkSession \
@@ -23,6 +24,15 @@ logger.info(dataframe.show(10, False))
 
 #TODO: ALS 
 
+predict_top_data = prepare_data(
+    spark,
+    dataframe,
+    demo_mode=True,
+    path_from_csv_file='/tmp/metadata/fake_als_top_result.csv',
+)
+logger.info(predict_top_data.count())
+logger.info(predict_top_data.show(10, False))
+
 logger.info('[+] Success analyzing with ALS')
 
-dataframe.write.mode('overwrite').parquet('/tmp/movie-frame-als')
+predict_top_data.write.mode('overwrite').parquet('/tmp/movie-frame-als')
