@@ -83,8 +83,8 @@ logger.info('[*] Starting analyzing with ALS')
 result_data = start_prepare_data(
     spark,
     dataframe,
-    demo_mode=True,
-    path_to_csv_file='/opt/metadata/als_top_result.csv'
+    save_mode=True,
+    path_to_csv_file='/opt/metadata/als_top_result_real.csv'
 )
 logger.info(result_data.count())
 logger.info(result_data.show(10, False))
@@ -94,18 +94,18 @@ logger.info('[+] Success analyzing with ALS')
 # Load to mongodb
 logger.info('[*] Loading recommendations to mongo')
 
-result_transformer = RecommendationTransformer()
-loader = AsyncMongoLoader(settings=MONGO_CONFIG)
+# result_transformer = RecommendationTransformer()
+# loader = AsyncMongoLoader(settings=MONGO_CONFIG)
 
 #TODO: fake
-import uuid
-result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id': [uuid.uuid4(),uuid.uuid4(),uuid.uuid4()]}], to_dict=True)
-
-result = asyncio.run(loader.load(
-    db_name=MONGO_CONFIG.DB_NAME,
-    collection_name=MONGO_CONFIG.COLLECTION_NAME,
-    data=result_data
-))
-logger.info(result)
+# import uuid
+# result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id': [uuid.uuid4(),uuid.uuid4(),uuid.uuid4()]}], to_dict=True)
+#
+# result = asyncio.run(loader.load(
+#     db_name=MONGO_CONFIG.DB_NAME,
+#     collection_name=MONGO_CONFIG.COLLECTION_NAME,
+#     data=result_data
+# ))
+# logger.info(result)
 
 logger.info('[+] Success loading recomendations to mongo')

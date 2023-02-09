@@ -6,7 +6,7 @@ skinparam sequence {
 	skinparam BoxPadding 20
 }
 
-title Create recommendation for users
+title Collecting analytical information about users's views
 
 box Apache Airflow
 participant Scheduler as sch order 10
