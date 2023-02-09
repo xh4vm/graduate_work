@@ -53,6 +53,7 @@ x-spark-worker: &base_spark_worker
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system/airflow/fake_data:/tmp/metadata
+    - /tmp/parquet:/tmp/parquet
   depends_on:
     spark-master:
       condition: service_healthy
@@ -82,7 +83,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
   volumes:
     - ./recommender_system/airflow/fake_data/movies.csv:/opt/metadata/movies.csv
@@ -91,6 +92,7 @@ x-airflow-common: &airflow-common
     - ./recommender_system/airflow/src:/opt/airflow/src
     - ./recommender_system/airflow/modules:/opt/airflow/modules
     - ./recommender_system/airflow/logs:/opt/airflow/logs
+    - /tmp/parquet:/tmp/parquet
   user: "${AIRFLOW_UID:-50000}:0"
   env_file: .env
   depends_on: &airflow-common-depends-on
@@ -797,3 +799,4 @@ volumes:
   mongo_cluster1-data5:
   mongo_cluster1-data6:
   spark-airflow-db:
+  parquet-data:
