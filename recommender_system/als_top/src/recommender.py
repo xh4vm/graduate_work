@@ -97,7 +97,7 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> RDD:
+def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> DataFrame:
 
     logger.info("Get dataframe")
     data_df = spark.createDataFrame(
@@ -128,5 +128,5 @@ def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> RDD:
     recommender.items_for_user.cache()
     recommender.items_for_user.count()
 
-    return recommender.items_for_user.rdd
+    return recommender.items_for_user
 
