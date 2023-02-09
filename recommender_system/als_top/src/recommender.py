@@ -97,7 +97,7 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def load_from_csv(spark, path_to_csv) -> DataFrame:
+def load_from_csv(spark: SparkSession, path_to_csv: str) -> DataFrame:
     demo_data = (
         spark.read.option('header', 'True').csv(path_to_csv, sep=',')
         .select(SETTINGS.als.headers_col.user_col, SETTINGS.prediction_movies_col)
@@ -105,6 +105,11 @@ def load_from_csv(spark, path_to_csv) -> DataFrame:
     demo_data.cache()
     demo_data.count()
     return demo_data
+
+
+def save_from_csv(data_df: DataFrame, path_to_csv: str):
+    pandas_data = data_df.toPandas()
+    pandas_data.to_csv(path_to_csv)
 
 
 def start_prepare_data(
@@ -117,7 +122,7 @@ def start_prepare_data(
 
     if demo_mode:
         logger.info('Load demo dataframe')
-        return load_from_csv(path_to_csv_file)
+        return load_from_csv(spark, path_to_csv_file)
 
     logger.info('Get dataframe')
     data_df = spark.createDataFrame(
@@ -150,8 +155,7 @@ def start_prepare_data(
 
     if save_mode:
         logger.info('Save results as {0}'.format(path_to_csv_file))
-        pandas_data = recommender.items_for_user.toPandas()
-        pandas_data.to_csv(path_to_csv_file)
+        save_from_csv(recommender.items_for_user, path_to_csv_file)
 
     return recommender.items_for_user
 
