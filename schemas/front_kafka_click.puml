@@ -1,0 +1,69 @@
+@startuml
+autonumber
+skinparam sequence {
+	ParticipantPadding 20
+	MessageAlign center
+}
+
+title New event from any of Online Movies API
+
+collections Producers as api_p order 1 #FFFF99
+participant APINotice as api_n order 3
+queue RabbitMQ as q order 7
+participant Builder as b order 10
+participant Sender as s order 15
+collections "API Auth" as api_a order 20
+database NoticeDB as db order 30
+collections Emails as em order 40 #99FF99
+
+api_p -> api_n: event
+note left
+name_of_event_source
+name_type_event
+context
+created
+end note
+api_n -> q: NewEvent
+q -> b: NewEvent
+
+group #ebfafa Build email
+loop #c2f0f0 for message in queue
+q -> b: message
+b -> api_a: get user data
+note left
+user_id,
+name_event: str,
+end note
+return user
+note left
+None if not permissions for this event or inappropriate timezone
+user_email, user_name
+end note
+alt #c2f0f0 user not None
+b -> db: get type_event data (message.name_event)
+return type_event data
+note left
+subject, template
+end note
+b -> b: render email_text
+b -> q: email_message_for_send
+note right
+message.likes_request_date,
+message.review_id,
+email_text
+end note
+end alt
+end loop
+end group
+
+loop #fff2e6 Send email
+q -> s: message
+s -> em: message
+em -> s: OK
+note right
+message.review_id,
+likes_request_date
+end note
+end loop
+
+@enduml

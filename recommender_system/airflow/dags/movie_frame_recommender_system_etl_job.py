@@ -7,6 +7,7 @@ from src.extract.metadata.admin_api import AdminAPIExtractor
 from src.extract.metadata.csv import CSVExtractor
 from src.transform.analytics.movie_frame import MovieFrameTransformer as AnalyticsTransformer
 from src.transform.metadata.movie_frame import MovieFrameTransformer as MetadataTransformer
+from modules.als_top.src.recommender import start_prepare_data
 
 # Initialize spark session
 spark = SparkSession \
@@ -74,7 +75,15 @@ logger.info('[+] Success transforming analytics data with metadata')
 # ALS 
 logger.info('[*] Starting analyzing with ALS')
 
-#TODO: ALS 
+#TODO: ALS
+als_top_result = start_prepare_data(
+    spark,
+    dataframe,
+    demo_mode=True,
+    path_to_csv_file='/opt/metadata/als_top_result.csv'
+)
+logger.info(als_top_result.count())
+logger.info(als_top_result.show(10, False))
 
 logger.info('[+] Success analyzing with ALS')
 
