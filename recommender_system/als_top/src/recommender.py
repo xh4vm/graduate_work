@@ -97,9 +97,29 @@ class Recommender:
         self.items_for_user = self.items_for_user.union(raw_top_movies)
 
 
-def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> DataFrame:
+def load_from_csv(spark, path_to_csv) -> DataFrame:
+    demo_data = (
+        spark.read.option('header', 'True').csv(path_to_csv, sep=',')
+        .select(SETTINGS.als.headers_col.user_col, SETTINGS.prediction_movies_col)
+    )
+    demo_data.cache()
+    demo_data.count()
+    return demo_data
 
-    logger.info("Get dataframe")
+
+def start_prepare_data(
+    spark: SparkSession,
+    data_rdd: RDD,
+    demo_mode: bool = False,
+    save_mode: bool = False,
+    path_to_csv_file: str = SETTINGS.path_to_csv,
+) -> DataFrame:
+
+    if demo_mode:
+        logger.info('Load demo dataframe')
+        return load_from_csv(path_to_csv_file)
+
+    logger.info('Get dataframe')
     data_df = spark.createDataFrame(
         data_rdd,
         list(SETTINGS.als.headers_col.dict(exclude={'prediction_col'}).values())
@@ -116,17 +136,22 @@ def start_prepare_data(spark: SparkSession,  data_rdd: RDD) -> DataFrame:
         prediction_movies_col=SETTINGS.prediction_movies_col,
     )
 
-    logger.info("Prepare predictions")
+    logger.info('Prepare predictions')
     recommender.als_predictor.prepare_predictions()
 
-    logger.info("Get top number items")
+    logger.info('Get top number items')
     recommender.get_top_number_items()
 
-    logger.info("Add raw top movies")
+    logger.info('Add raw top movies')
     recommender.add_raw_top_movies()
 
     recommender.items_for_user.cache()
     recommender.items_for_user.count()
+
+    if save_mode:
+        logger.info('Save results as {0}'.format(path_to_csv_file))
+        pandas_data = recommender.items_for_user.toPandas()
+        pandas_data.to_csv(path_to_csv_file)
 
     return recommender.items_for_user
 

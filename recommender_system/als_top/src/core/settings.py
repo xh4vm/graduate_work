@@ -61,6 +61,7 @@ class Settings(CommonSettings):
     als = AlsSettings().parse_obj(AlsSettings().dict())
     seed = 1001
     prediction_movies_col = "movies_id"
+    path_to_csv: str = '/tmp/als_top_results/als_top_results.csv'
 
     class Config:
         env_prefix = 'RECOMMENDER_'

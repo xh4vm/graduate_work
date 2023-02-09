@@ -12,6 +12,8 @@ cp ./ugc/.env.example ./ugc/.env
 
 # Копирование переменных окружения для сервиса recommender_system
 cp ./recommender_system/.env.example ./recommender_system/.env 
+cp ./recommender_system/als_top/.env.example ./recommender_system/als_top/.env 
+
 
 # Копирование файлов настроек для nginx
 rm -rf ./nginx/static && cp -r ./nginx/static_defaults/ ./nginx/static
