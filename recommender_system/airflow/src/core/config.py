@@ -4,6 +4,20 @@ import backoff
 from pydantic import BaseSettings, Field
 
 
+class DBSettings(BaseSettings):
+    DRIVER: str
+    HOST: str
+    PORT: int
+
+    class Config:
+        env_prefix = 'RECOMMENDER_DB_'
+
+
+class MongoDBSettings(DBSettings):
+    DB_NAME: str
+    COLLECTION_NAME: str
+
+
 class ClickhouseSettings(BaseSettings):
     NODES: str
     USER: str = Field('default')
@@ -41,4 +55,6 @@ class ClickhouseNode4(BaseSettings):
 
 NODES = [ClickhouseNode1(), ClickhouseNode2(), ClickhouseNode3(), ClickhouseNode4()]
 CLICKHOUSE_CONFIG: ClickhouseSettings = ClickhouseSettings()
+MONGO_CONFIG: MongoDBSettings = MongoDBSettings()
+
 BACKOFF_CONFIG = {'wait_gen': backoff.expo, 'exception': Exception, 'max_value': 128}

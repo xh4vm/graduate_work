@@ -1,12 +1,15 @@
+import asyncio
 from pyspark.sql import SparkSession
 from loguru import logger
 
-from src.core.config import NODES, CLICKHOUSE_CONFIG
+from src.core.config import NODES, CLICKHOUSE_CONFIG, MONGO_CONFIG
 from src.extract.analytics.clickhouse import ClickhouseExtractor
 from src.extract.metadata.admin_api import AdminAPIExtractor
 from src.extract.metadata.csv import CSVExtractor
 from src.transform.analytics.movie_frame import MovieFrameTransformer as AnalyticsTransformer
 from src.transform.metadata.movie_frame import MovieFrameTransformer as MetadataTransformer
+from src.transform.recommendation import RecommendationTransformer
+from src.load.mongo import AsyncMongoLoader
 from modules.als_top.src.recommender import start_prepare_data
 
 # Initialize spark session
@@ -35,6 +38,7 @@ analytics_data = analytics_transformer.transform(analytics_raw_data, to_dict=Tru
 
 analytics_rdd = spark_context.parallelize(analytics_data)
 analytics_dataframe = spark.read.json(analytics_rdd)
+logger.info(analytics_dataframe.show(10, False))
 logger.info(analytics_dataframe.count())
 
 logger.info('[+] Success finished etl process clickhouse to spark')
@@ -90,6 +94,18 @@ logger.info('[+] Success analyzing with ALS')
 # Load to mongodb
 logger.info('[*] Loading recomendations to mongo')
 
-#TODO: MongoLoader
+result_transformer = RecommendationTransformer()
+loader = AsyncMongoLoader(settings=MONGO_CONFIG)
+
+#TODO: fake
+import uuid
+result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id': [uuid.uuid4(),uuid.uuid4(),uuid.uuid4()]}], to_dict=True)
+
+result = asyncio.run(loader.load(
+    db_name=MONGO_CONFIG.DB_NAME,
+    collection_name=MONGO_CONFIG.COLLECTION_NAME,
+    data=result_data
+))
+logger.info(result)
 
 logger.info('[+] Success loading recomendations to mongo')
