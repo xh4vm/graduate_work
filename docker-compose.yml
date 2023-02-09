@@ -52,7 +52,7 @@ x-spark-worker: &base_spark_worker
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
-    - ./recommender_system/airflow/fake_data:/opt/metadata:rwxrwxrwx
+    - ./recommender_system/airflow/fake_data:/tmp/metadata
   depends_on:
     spark-master:
       condition: service_healthy
@@ -350,7 +350,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/airflow/fake_data:/opt/metadata:rwxrwxrwx
+      - ./recommender_system/airflow/fake_data:/tmp/metadata
     profiles:
       - dev_graduate
       - prod
