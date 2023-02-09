@@ -27,7 +27,17 @@ sch -> etl
 etl -> cl
 return analytics_raw_data
 
-etl -> etl: transform
+etl -> spark: analytics_raw_data
+return: analytics_dataframe
+
+etl -> a_api
+return metadata: movies duration
+etl -> spark: metadata
+return analytics_metrics_dataframe
+
+etl -> als: analytics_metrics_dataframe
+als -> spark: analytics_metrics_dataframe
+return prediction_top_dataframe
 
 'api_p -> api_n: event
 'note left
