@@ -39,6 +39,7 @@ return prediction_top_dataframe
 
 als -> sv: prediction_top_dataframe
 
+sv -> sv: transform data
 sv -> mng: prediction_top_data
 return ok
 
