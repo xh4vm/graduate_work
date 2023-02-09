@@ -8,7 +8,6 @@ pydantic==1.10.4
 orjson==3.6.6
 motor==3.1.1
 python-dotenv==0.20.0
-numpy==1.19.5
-python-dateutil==2.4.0
-pydantic==1.10.4
+numpy
+pydantic
 tqdm
