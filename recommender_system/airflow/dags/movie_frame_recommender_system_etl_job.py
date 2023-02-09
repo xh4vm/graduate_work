@@ -10,7 +10,7 @@ from src.transform.analytics.movie_frame import MovieFrameTransformer as Analyti
 from src.transform.metadata.movie_frame import MovieFrameTransformer as MetadataTransformer
 from src.transform.recommendation import RecommendationTransformer
 from src.load.mongo import AsyncMongoLoader
-from modules.als_top.src.recommender import start_prepare_data
+from modules.als_top.als_src.recommender import start_prepare_data
 
 # Initialize spark session
 spark = SparkSession \
