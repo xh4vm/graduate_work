@@ -4,7 +4,6 @@ CREATE DATABASE IF NOT EXISTS movies_replica;
 CREATE TABLE IF NOT EXISTS movies.movie_frame_queue
 (
     movie_id                  String,
-    movie_duration            Int64,
     frame_time                Int64,
     `event.type`              String,
     `event.timestamp`         Int64
@@ -23,7 +22,6 @@ CREATE TABLE IF NOT EXISTS movies.movie_frame
     id                      UUID,
     user_id                 String,
     movie_id                String,
-    movie_duration          Int64,
     frame_time              Int64,
     event_type              String,
     event_timestamp         Int64,
@@ -36,7 +34,7 @@ ORDER BY (id);
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS movies.movie_frame_consumer
 TO movies.movie_frame
-AS SELECT movie_id, movie_duration, frame_time, _key as user_id, generateUUIDv4() as id, event.type as event_type, event.timestamp as event_timestamp
+AS SELECT movie_id, frame_time, _key as user_id, generateUUIDv4() as id, event.type as event_type, event.timestamp as event_timestamp
 FROM movies.movie_frame_queue;
 
 
@@ -45,7 +43,6 @@ CREATE TABLE IF NOT EXISTS default.movie_frame
     id                      UUID,
     user_id                 String,
     movie_id                String,
-    movie_duration          Int64,
     frame_time              Int64,
     event_type              String,
     event_timestamp         Int64,

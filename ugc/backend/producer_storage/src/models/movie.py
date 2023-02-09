@@ -20,22 +20,14 @@ class Event(JSONModel):
 class MovieFrameDatagram(JSONModel):
     movie_id: str
     frame_time: int
-    movie_duration: int
     event: Event
 
-    @validator('movie_duration', 'frame_time')
+    @validator('frame_time')
     def frame_time_ge_zero(cls, value: int) -> int:
         if value >= 0:
             return value
 
-        raise ValueError('"frame_time" and "movie_duration" must be greater than zero')
-
-    @validator('movie_duration')
-    def movie_duration_ge_frame_time(cls, value: int, values: dict[str, Any], **kwargs) -> int:
-        if values.get('frame_time') is not None and value >= values.get('frame_time'):
-            return value
-
-        raise ValueError('"movie_duration" must be greater than "frame_time"')
+        raise ValueError('"frame_time" must be greater than zero')
 
 
 class MovieFrame(MovieFrameDatagram):
