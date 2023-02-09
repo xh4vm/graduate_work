@@ -53,4 +53,4 @@ class MovieRating(JSONModel):
 
     @property
     def stop(self) -> int:
-        return self.rating * self.duration + self.start
+        return self.rating * randint(1, 3) * 60 * 60 * 60 + self.start

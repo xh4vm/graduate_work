@@ -3,6 +3,7 @@ from models.base import BaseMixin
 from pydantic import Field
 from typing import Any
 
+
 class Recommendation(BaseMixin):
     user_id: uuid.UUID
     movies_id: list[uuid.UUID] = Field(default=[])
