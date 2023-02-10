@@ -1,5 +1,4 @@
-# need for python 3.8
-from typing import Optional, Iterator, Any, Dict
+from typing import Optional, Iterator, Any, Dict, List
 
 import backoff
 from loguru import logger
@@ -24,11 +23,13 @@ class ClickhouseExtractor(BaseExtractor):
         port: int,
         user:str = 'default',
         password: str = '',
+        alt_hosts: Optional[List[str]] = None,
         conn: Optional[Clickhouse] = None,
         settings: Optional[Dict[str, Any]] = None
     ) -> None:
         self._conn: Clickhouse = conn
         self._host: str = host
+        self._alt_hosts: Optional[List[str]] = alt_hosts
         self._port: int = port
         self._user: str = user
         self._password: str = password
@@ -53,6 +54,7 @@ class ClickhouseExtractor(BaseExtractor):
             host=self._host,
             port=self._port,
             user=self._user,
+            alt_hosts=','.join(self._alt_hosts),
             password=self._password,
             settings=self._settings,
         )
