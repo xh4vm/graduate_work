@@ -105,7 +105,7 @@ result_data = result_transformer.transform(predict_top_data, to_dict=True)
 result = asyncio.run(loader.load(
     db_name=MONGO_CONFIG.DB_NAME,
     collection_name=MONGO_CONFIG.COLLECTION_NAME,
-    data=result_data
+    data=predict_top_data
 ))
 logger.info(result)
 

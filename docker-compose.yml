@@ -54,6 +54,7 @@ x-spark-worker: &base_spark_worker
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system/airflow/fake_data:/tmp/metadata
     - /tmp/parquet:/tmp/parquet
+    - ./recommender_system/jupyter-notebook/work:/opt/work
   depends_on:
     spark-master:
       condition: service_healthy
@@ -393,6 +394,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/airflow/fake_data:/tmp/metadata
+      - ./recommender_system/jupyter-notebook/work:/opt/work
     profiles:
       - dev_graduate
       - prod
@@ -450,7 +452,8 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system/jupyter-notebook/work:/home/developer/work
+      - ./recommender_system/jupyter-notebook/work:/opt/work
       - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
       - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
     profiles:
