@@ -105,7 +105,7 @@ result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id
 result = asyncio.run(loader.load(
     db_name=MONGO_CONFIG.DB_NAME,
     collection_name=MONGO_CONFIG.COLLECTION_NAME,
-    data=predict_top_data
+    data=result_data
 ))
 logger.info(result)
 
