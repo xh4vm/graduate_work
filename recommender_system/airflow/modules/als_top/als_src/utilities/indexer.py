@@ -2,6 +2,7 @@ from pyspark.ml.feature import StringIndexer
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 from als_src.als_core.settings import AlsHeadersCol
+from loguru import logger
 
 
 class Indexer:
@@ -15,6 +16,10 @@ class Indexer:
         items_original = data.select(self.headers_col.item_col).distinct()
         self.users = self._indexing(users_original, self.headers_col.user_col)
         self.items = self._indexing(items_original, self.headers_col.item_col)
+        logger.info('Indexer users:')
+        logger.info(self.users.show(10))
+        logger.info('Indexer items:')
+        logger.info(self.items.show(10))
         del users_original, items_original
 
     @classmethod
