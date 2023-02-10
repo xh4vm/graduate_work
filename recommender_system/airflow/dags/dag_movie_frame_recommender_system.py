@@ -1,21 +1,28 @@
-import airflow
+import pendulum
 from datetime import timedelta
 from airflow import DAG
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator 
 
+from src.core.config import AIRFLOW_DAG_MOVIE_FRAME_CONFIG
+
+
 default_args = {
     'owner': 'airflow',    
+    'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
 dag_movie_frame_recommender_system = DAG(
         dag_id = 'dag_movie_frame_recommender_system',
         default_args=default_args,
-        schedule_interval=None,	
         dagrun_timeout=timedelta(minutes=60),
         description='Рекомендательная система фильмов на основе истории просмотра пользователя',
-        start_date = airflow.utils.dates.days_ago(1)
+        schedule=AIRFLOW_DAG_MOVIE_FRAME_CONFIG.SCHEDULE,
+        start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
+        catchup=False,
+        tags=['movie_frame'],
 )
+
 
 etl_clickhouse_to_parquet = SparkSubmitOperator(
     application='/opt/airflow/dags/movie_frame/etl_clickhouse_to_parquet.py',
@@ -58,13 +65,3 @@ load_to_mongo = SparkSubmitOperator(
 )
 
 [etl_admin_api_to_parquet, etl_clickhouse_to_parquet] >> etl_join_data >> als >> load_to_mongo
-
-# movie_frame_recommender_system_etl_job = SparkSubmitOperator(
-#     application='/opt/airflow/dags/movie_frame_recommender_system_etl_job.py',
-#     conn_id='spark_default',
-#     verbose=1,
-#     task_id='movie_frame_recommender_system_etl_job', 
-#     dag=dag_movie_frame_recommender_system
-# )
-
-# movie_frame_recommender_system_etl_job

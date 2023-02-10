@@ -1,21 +1,19 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from loguru import logger
+
+from src.core.config import HDFS_CONFIG, SPARK_CONFIG
+from src.schema.movie_frame import ALS
 
 
 spark = SparkSession \
     .builder \
-    .master('spark://spark-master:7077') \
+    .master(f'{SPARK_CONFIG.DRIVER}://{SPARK_CONFIG.HOST}:{SPARK_CONFIG.PORT}') \
     .appName('movie_frame-als') \
     .getOrCreate()
 
-schema = StructType(fields=[
-    StructField(name='metric', dataType=FloatType(), nullable=False),
-    StructField(name='movie_id', dataType=StringType(), nullable=False),
-    StructField(name='user_id', dataType=StringType(), nullable=False),
-])
-
-dataframe = spark.read.schema(schema).parquet('/tmp/movie-frame-etl-join-data')
+dataframe = spark.read.schema(ALS).parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-join-data'
+)
 
 logger.info('[*] Starting analyzing with ALS')
 
@@ -25,4 +23,7 @@ logger.info(dataframe.show(10, False))
 
 logger.info('[+] Success analyzing with ALS')
 
-dataframe.write.mode('overwrite').parquet('/tmp/movie-frame-als')
+dataframe.write.parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-als',
+    mode='overwrite'
+)

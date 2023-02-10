@@ -1,6 +1,16 @@
+FROM python:3.8-slim AS airflow-builder
+
+WORKDIR /opt
+COPY requirements.txt .
+
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential python-dev python3-dev g++ \
+     && pip install --upgrade pip \
+     && pip install wheel && pip3 wheel -r requirements.txt --wheel-dir=/opt/wheels
+
 FROM apache/airflow:2.2.5-python3.8
 
 USER root
+COPY --from=airflow-builder /opt /opt
 
 RUN apt update && \
     apt-get install -y openjdk-11-jdk && \
@@ -13,7 +23,7 @@ RUN export JAVA_HOME
 USER airflow
 ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/
 
-COPY ./requirements.txt /
-RUN pip install -r /requirements.txt
-
+COPY ./requirements.txt .
 COPY --chown=airflow:root ./dags /opt/airflow/dags
+
+RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
