@@ -391,7 +391,7 @@ services:
     container_name: airflow-webserver
     command: webserver
     ports:
-      - ${AIRFLOW_PORT}:${AIRFLOW_PORT}
+      - ${AIRFLOW_PORT_NGINX}:${AIRFLOW_PORT}
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://airflow-webserver:${AIRFLOW_PORT}/health"]
       interval: 10s
