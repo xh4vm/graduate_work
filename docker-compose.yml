@@ -142,6 +142,16 @@ x-base-mongos_dependencies: &mongos_dependencies
       condition: service_healthy
     mongocfg3:
       condition: service_healthy
+      
+x-datanode: &hadoop-datanode
+  image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+  restart: always
+  environment:
+    SERVICE_PRECONDITION: "namenode:9870"
+    CORE_CONF_fs_defaultFS: hdfs://namenode:9000
+  expose:
+    - 9864
+
 
 x-datanode: &hadoop-datanode
   image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
