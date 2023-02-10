@@ -28,12 +28,13 @@ predict_top_data = prepare_data(
     demo_mode=True,
     path_from_csv_file='/tmp/metadata/fake_als_top_result.csv',
 )
+
 logger.info(predict_top_data.count())
 logger.info(predict_top_data.show(10, False))
 
 logger.info('[+] Success analyzing with ALS')
 
-dataframe.write.parquet(
+predict_top_data.write.parquet(
     f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-als',
     mode='overwrite'
 )

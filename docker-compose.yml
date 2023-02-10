@@ -162,6 +162,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -195,6 +196,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -405,6 +407,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     expose:
       - ${SPARK_MASTER_WEB_PORT}
       - ${SPARK_MASTER_PORT}
@@ -428,6 +431,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
 
   spark-worker02:
     <<: *base_service
@@ -437,6 +441,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
 
   spark-worker03:
     <<: *base_service
@@ -446,6 +451,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     
   jupyter-notebook:
     <<: *base_service
@@ -460,7 +466,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
-      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
       - ./recommender_system/jupyter-notebook/work:/opt/work
       - ./recommender_system/airflow/modules:/home/jovyan/modules
     profiles:
@@ -473,6 +478,7 @@ services:
     <<: *base_grpc
     profiles: 
       - dev_graduate
+      - spark
     ports:
       - ${RECOMMENDER_GRPC_PORT}:${RECOMMENDER_GRPC_PORT}
 
