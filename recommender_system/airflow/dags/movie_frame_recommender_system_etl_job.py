@@ -99,8 +99,8 @@ loader = AsyncMongoLoader(settings=MONGO_CONFIG)
 
 #TODO: fake
 import uuid
-# result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id': [uuid.uuid4(),uuid.uuid4(),uuid.uuid4()]}], to_dict=True)
-result_data = result_transformer.transform(predict_top_data, to_dict=True)
+result_data = result_transformer.transform([{'user_id': uuid.uuid4(), 'movies_id': [uuid.uuid4(),uuid.uuid4(),uuid.uuid4()]}], to_dict=True)
+#result_data = result_transformer.transform(predict_top_data, to_dict=True)
 
 result = asyncio.run(loader.load(
     db_name=MONGO_CONFIG.DB_NAME,

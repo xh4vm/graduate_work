@@ -55,6 +55,7 @@ x-spark-worker: &base_spark_worker
     - ./recommender_system/airflow/fake_data:/tmp/metadata
     - /tmp/parquet:/tmp/parquet
     - ./recommender_system/jupyter-notebook/work:/opt/work
+    - ./recommender_system/airflow/modules:/opt/modules
   depends_on:
     spark-master:
       condition: service_healthy
@@ -395,6 +396,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/airflow/fake_data:/tmp/metadata
       - ./recommender_system/jupyter-notebook/work:/opt/work
+      - ./recommender_system/airflow/modules:/opt/modules
     profiles:
       - dev_graduate
       - prod
@@ -454,6 +456,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - ./recommender_system/jupyter-notebook/work:/home/developer/work
       - ./recommender_system/jupyter-notebook/work:/opt/work
+      - ./recommender_system/airflow/modules:/home/developer/modules
       - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
       - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
     profiles:
@@ -602,20 +605,6 @@ services:
       interval: 20s
       timeout: 120s
       retries: 10
-
-  mongodb_initer:
-    <<: *base_service
-    build:
-      context: ./recommender_system/
-      dockerfile: mongodb_initer/Dockerfile
-    container_name: mongodb_initer
-    profiles:
-      - mongo
-      - dev_graduate
-      - prod
-    depends_on:
-      mongo_cluster_initer:
-        condition: service_healthy
 
   airflow-db:
     <<: *base_service

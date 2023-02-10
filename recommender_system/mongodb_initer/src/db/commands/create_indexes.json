@@ -1,8 +1,0 @@
-{
-  "db_data.recommendations.createIndexes": {
-    "createIndexes": "recommendations",
-    "indexes": [
-      { "key": { "user_id": 1, "film_id": 1 }, "unique": true, "name": "recommendations film_id_user_id key" }
-    ]
-  }
-}
