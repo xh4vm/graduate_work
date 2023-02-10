@@ -11,10 +11,12 @@ x-redis: &base_redis
   image: redis:7.0-alpine
   container_name: redis
   restart: unless-stopped
+  command: >
+    --requirepass ${REDIS_PASSWORD}
   expose:
     - ${REDIS_PORT}
   healthcheck:
-    test: [ "CMD", "redis-cli","ping" ]
+    test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
     interval: 30s
     timeout: 10s
     retries: 5
@@ -53,7 +55,6 @@ x-spark-worker: &base_spark_worker
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system/airflow/fake_data:/tmp/metadata
-    - /tmp/parquet:/tmp/parquet
     - ./recommender_system/jupyter-notebook/work:/opt/work
     - ./recommender_system/airflow/modules:/opt/modules
   depends_on:
@@ -61,7 +62,7 @@ x-spark-worker: &base_spark_worker
       condition: service_healthy
   environment:
     - SPARK_MODE=worker
-    - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+    - SPARK_MASTER_URL=${SPARK_MASTER_DRIVER}://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT}
     - SPARK_WORKER_MEMORY=2G
     - SPARK_WORKER_CORES=1
     - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -82,7 +83,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -94,7 +95,6 @@ x-airflow-common: &airflow-common
     - ./recommender_system/airflow/src:/opt/airflow/src
     - ./recommender_system/airflow/modules:/opt/airflow/modules
     - ./recommender_system/airflow/logs:/opt/airflow/logs
-    - /tmp/parquet:/tmp/parquet
   user: "${AIRFLOW_UID:-50000}:0"
   env_file: .env
   depends_on: &airflow-common-depends-on
@@ -103,9 +103,18 @@ x-airflow-common: &airflow-common
     airflow-db:
       condition: service_healthy
 
+x-datanode: &hadoop-datanode
+  image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+  restart: always
+  environment:
+    SERVICE_PRECONDITION: "namenode:9870"
+    CORE_CONF_fs_defaultFS: hdfs://namenode:9000
+  expose:
+    - 9864
+
 x-base-mongodb-cluster-unit: &base-mongodb_cluster-unit
   <<: *base_service
-  image: mongo
+  image: mongo:6.0.4
   expose:
     - "27017"
   profiles:
@@ -268,7 +277,7 @@ services:
       - kafka02
       - kafka03
     ports:
-      - "9021:9021"
+      - 9021:9021
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka01:9092'
       CONTROL_CENTER_REPLICATION_FACTOR: 1
@@ -340,8 +349,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node1:/etc/clickhouse-server
-    ports:
-      - "9000:9000"
 
   clickhouse-node2:
     <<: *base_service
@@ -354,7 +361,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node2:/etc/clickhouse-server
-
 
   clickhouse-node3:
     <<: *base_service
@@ -369,7 +375,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node3:/etc/clickhouse-server
-
 
   clickhouse-node4:
     <<: *base_service
@@ -410,7 +415,7 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     healthcheck:
-      test: curl http://spark-master:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      test: curl http://${SPARK_MASTER_HOST}:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5
@@ -454,11 +459,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/jupyter-notebook/work:/home/developer/work
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
       - ./recommender_system/jupyter-notebook/work:/opt/work
-      - ./recommender_system/airflow/modules:/home/developer/modules
-      - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
-      - ./recommender_system/jupyter-notebook/mongo-spark-connector_2.12-3.0.1.jar:/opt/mongo-spark-connector_2.12-3.0.1.jar
+      - ./recommender_system/airflow/modules:/home/jovyan/modules
     profiles:
       - dev_graduate
     ports:
@@ -633,9 +637,9 @@ services:
     container_name: airflow-webserver
     command: webserver
     ports:
-      - 8081:8080
+      - ${AIRFLOW_PORT_NGINX}:${AIRFLOW_PORT}
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://airflow-webserver:8080/health"]
+      test: ["CMD", "curl", "--fail", "http://airflow-webserver:${AIRFLOW_PORT}/health"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -777,9 +781,9 @@ services:
     container_name: airflow-flower
     command: celery flower
     ports:
-      - 5555:5555
+      - ${FLOWER_PORT}:${FLOWER_PORT}
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://flower:5555/"]
+      test: ["CMD", "curl", "--fail", "http://flower:${FLOWER_PORT}/"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -791,6 +795,48 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  namenode:
+    <<: *base_service
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - 9870:9870
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    env_file:
+      - .env
+
+  datanode01:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode01
+    volumes:
+      - hadoop_datanode01:/hadoop/dfs/data
+    env_file:
+      - .env
+
+  datanode02:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode02
+    volumes:
+      - hadoop_datanode02:/hadoop/dfs/data
+    env_file:
+      - .env
+
+  datanode03:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode03
+    volumes:
+      - hadoop_datanode03:/hadoop/dfs/data
+    env_file:
+      - .env
 
 networks:
   graduate:
@@ -809,4 +855,7 @@ volumes:
   mongo_cluster1-data5:
   mongo_cluster1-data6:
   spark-airflow-db:
-  parquet-data:
+  hadoop_namenode:
+  hadoop_datanode01:
+  hadoop_datanode02:
+  hadoop_datanode03:

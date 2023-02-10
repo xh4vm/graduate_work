@@ -1,14 +1,15 @@
 from pyspark.sql import SparkSession
 from loguru import logger
 
-from src.core.config import NODES, CLICKHOUSE_CONFIG
+from src.core.config import NODES, CLICKHOUSE_CONFIG, HDFS_CONFIG, SPARK_CONFIG
 from src.extract.analytics.clickhouse import ClickhouseExtractor
 from src.transform.analytics.movie_frame import MovieFrameTransformer as AnalyticsTransformer
+from src.schema.movie_frame import OLAP
 
 
 spark = SparkSession \
     .builder \
-    .master('spark://spark-master:7077') \
+    .master(f'{SPARK_CONFIG.DRIVER}://{SPARK_CONFIG.HOST}:{SPARK_CONFIG.PORT}') \
     .appName('movie_frame-etl_clickhouse_to_parquet') \
     .getOrCreate()
 
@@ -21,6 +22,7 @@ extractor = ClickhouseExtractor(
     port=NODES[0].PORT,
     user=CLICKHOUSE_CONFIG.USER,
     password=CLICKHOUSE_CONFIG.PASSWORD,
+    alt_hosts=[f'{NODE.HOST}:{NODE.PORT}' for NODE in  NODES[1:]],
     settings={'use_numpy': True}
 )
 transformer = AnalyticsTransformer()
@@ -29,21 +31,15 @@ analytics_raw_data = extractor.extract(query="with t as (select user_id, movie_i
 analytics_data = transformer.transform(analytics_raw_data, to_dict=True)
 
 rdd = spark_context.parallelize(analytics_data)
-dataframe = spark.read.json(rdd)
+dataframe = spark.createDataFrame(rdd, OLAP)
+
 logger.info(dataframe.show(10, False))
 logger.info(dataframe.count())
 logger.info(dataframe.printSchema())
 
-dataframe.write.parquet(path='/tmp/movie-frame-etl-clickhouse-to-parquet', mode='overwrite')
+dataframe.write.parquet(
+    path=f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-clickhouse-to-parquet',
+    mode='overwrite'
+)
 
 logger.info('[+] Success finished etl process clickhouse to spark')
-
-from pyspark.sql.types import StructType, StructField, DoubleType, StringType
-analytics_schema = StructType(fields=[
-    StructField(name='metric', dataType=DoubleType(), nullable=True),
-    StructField(name='movie_id', dataType=StringType(), nullable=True),
-    StructField(name='user_id', dataType=StringType(), nullable=True),
-])
-
-analytics_dataframe = spark.read.schema(analytics_schema).parquet('/tmp/movie-frame-etl-clickhouse-to-parquet')
-logger.info(analytics_dataframe.show(10, False))

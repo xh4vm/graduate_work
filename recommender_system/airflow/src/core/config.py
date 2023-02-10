@@ -4,6 +4,32 @@ import backoff
 from pydantic import BaseSettings, Field
 
 
+class AirflowDagMovieFrameSettings(BaseSettings):
+    SCHEDULE: str
+
+    class Config:
+        env_prefix = 'AIRFLOW_DAG_MOVIE_FRAME_'
+
+
+class SparkSettings(BaseSettings):
+    DRIVER: str
+    HOST: str
+    PORT: int
+
+    class Config:
+        env_prefix = 'SPARK_MASTER_'
+
+
+class HDFSSettings(BaseSettings):
+    DRIVER: str
+    HOST: str
+    PORT: int
+    PATH: str
+
+    class Config:
+        env_prefix = 'HDFS_'
+
+
 class DBSettings(BaseSettings):
     DRIVER: str
     HOST: str
@@ -16,6 +42,13 @@ class DBSettings(BaseSettings):
 class MongoDBSettings(DBSettings):
     DB_NAME: str
     COLLECTION_NAME: str
+
+
+class AdminApiFakeSettings(BaseSettings):
+    DATA_PATH: str
+
+    class Config:
+        env_prefix = 'ADMIN_API_FAKE_'
 
 
 class ClickhouseSettings(BaseSettings):
@@ -56,5 +89,10 @@ class ClickhouseNode4(BaseSettings):
 NODES = [ClickhouseNode1(), ClickhouseNode2(), ClickhouseNode3(), ClickhouseNode4()]
 CLICKHOUSE_CONFIG: ClickhouseSettings = ClickhouseSettings()
 MONGO_CONFIG: MongoDBSettings = MongoDBSettings()
+HDFS_CONFIG: HDFSSettings = HDFSSettings()
+SPARK_CONFIG: SparkSettings = SparkSettings()
+ADMIN_API_FAKE_CONFIG: AdminApiFakeSettings = AdminApiFakeSettings()
 
-BACKOFF_CONFIG = {'wait_gen': backoff.expo, 'exception': Exception, 'max_value': 128}
+AIRFLOW_DAG_MOVIE_FRAME_CONFIG: AirflowDagMovieFrameSettings = AirflowDagMovieFrameSettings()
+
+BACKOFF_CONFIG = {'wait_gen': backoff.expo, 'exception': Exception, 'max_value': 8}
