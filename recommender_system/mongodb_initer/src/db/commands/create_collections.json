@@ -1,0 +1,32 @@
+{
+  "db_data.recommendations.create":{
+      "create": "recommendations",
+      "clusteredIndex": { "key": { "_id": 1 }, "unique": true, "name": "recommendations clustered key" },
+      "validator": {
+          "$jsonSchema": {
+              "bsonType": "object",
+              "required": [
+                  "user_id",
+                  "movies_id"
+              ],
+              "properties": {
+                  "user_id": {
+                      "bsonType": "string",
+                      "description": "User's UUID"
+                  },
+                  "movies_id": {
+                      "bsonType": "array",
+                      "items": {
+                          "description": "List of movie",
+                          "type": "string"
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "db_admin.recommendations.shardCollection":{
+      "shardCollection": "recommender.recommendations",
+      "key": { "user_id": "hashed"}
+  }
+}

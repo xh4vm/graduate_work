@@ -17,54 +17,54 @@ dag_movie_frame_recommender_system = DAG(
         start_date = airflow.utils.dates.days_ago(1)
 )
 
-etl_clickhouse_to_parquet = SparkSubmitOperator(
-    application='/opt/airflow/dags/movie_frame/etl_clickhouse_to_parquet.py',
-    conn_id='spark_default',
-    verbose=1,
-    task_id='etl_clickhouse_to_parquet', 
-    dag=dag_movie_frame_recommender_system
-)
-
-etl_admin_api_to_parquet = SparkSubmitOperator(
-    application='/opt/airflow/dags/movie_frame/etl_admin_api_to_parquet.py',
-    conn_id='spark_default',
-    verbose=1,
-    task_id='etl_admin_api_to_parquet', 
-    dag=dag_movie_frame_recommender_system
-)
-
-etl_join_data = SparkSubmitOperator(
-    application='/opt/airflow/dags/movie_frame/etl_join_data.py',
-    conn_id='spark_default',
-    verbose=1,
-    task_id='etl_join_data', 
-    dag=dag_movie_frame_recommender_system
-)
-
-als = SparkSubmitOperator(
-    application='/opt/airflow/dags/movie_frame/als.py',
-    conn_id='spark_default',
-    verbose=1,
-    task_id='als', 
-    dag=dag_movie_frame_recommender_system
-)
-
-load_to_mongo = SparkSubmitOperator(
-    application='/opt/airflow/dags/movie_frame/load_to_mongo.py',
-    conn_id='spark_default',
-    verbose=1,
-    task_id='load_to_mongo', 
-    dag=dag_movie_frame_recommender_system
-)
-
-[etl_admin_api_to_parquet, etl_clickhouse_to_parquet] >> etl_join_data >> als >> load_to_mongo
-
-# movie_frame_recommender_system_etl_job = SparkSubmitOperator(
-#     application='/opt/airflow/dags/movie_frame_recommender_system_etl_job.py',
+# etl_clickhouse_to_parquet = SparkSubmitOperator(
+#     application='/opt/airflow/dags/movie_frame/etl_clickhouse_to_parquet.py',
 #     conn_id='spark_default',
 #     verbose=1,
-#     task_id='movie_frame_recommender_system_etl_job', 
+#     task_id='etl_clickhouse_to_parquet',
 #     dag=dag_movie_frame_recommender_system
 # )
+#
+# etl_admin_api_to_parquet = SparkSubmitOperator(
+#     application='/opt/airflow/dags/movie_frame/etl_admin_api_to_parquet.py',
+#     conn_id='spark_default',
+#     verbose=1,
+#     task_id='etl_admin_api_to_parquet',
+#     dag=dag_movie_frame_recommender_system
+# )
+#
+# etl_join_data = SparkSubmitOperator(
+#     application='/opt/airflow/dags/movie_frame/etl_join_data.py',
+#     conn_id='spark_default',
+#     verbose=1,
+#     task_id='etl_join_data',
+#     dag=dag_movie_frame_recommender_system
+# )
+#
+# als = SparkSubmitOperator(
+#     application='/opt/airflow/dags/movie_frame/als.py',
+#     conn_id='spark_default',
+#     verbose=1,
+#     task_id='als',
+#     dag=dag_movie_frame_recommender_system
+# )
+#
+# load_to_mongo = SparkSubmitOperator(
+#     application='/opt/airflow/dags/movie_frame/load_to_mongo.py',
+#     conn_id='spark_default',
+#     verbose=1,
+#     task_id='load_to_mongo',
+#     dag=dag_movie_frame_recommender_system
+# )
+#
+# [etl_admin_api_to_parquet, etl_clickhouse_to_parquet] >> etl_join_data >> als >> load_to_mongo
 
-# movie_frame_recommender_system_etl_job
+movie_frame_recommender_system_etl_job = SparkSubmitOperator(
+    application='/opt/airflow/dags/movie_frame_recommender_system_etl_job.py',
+    conn_id='spark_default',
+    verbose=1,
+    task_id='movie_frame_recommender_system_etl_job',
+    dag=dag_movie_frame_recommender_system
+)
+
+movie_frame_recommender_system_etl_job

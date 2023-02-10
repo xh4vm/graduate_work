@@ -101,6 +101,46 @@ x-airflow-common: &airflow-common
     airflow-db:
       condition: service_healthy
 
+x-base-mongodb-cluster-unit: &base-mongodb_cluster-unit
+  <<: *base_service
+  image: mongo
+  expose:
+    - "27017"
+  profiles:
+    - mongo
+    - dev_graduate
+    - prod
+
+x-base-mongodb-cluster-unit-healthcheck: &base-mongodb_cluster-unit-healthcheck
+  healthcheck:
+    test: [ "CMD","mongosh", "--eval", "db.adminCommand('ping')" ]
+    interval: 10s
+    timeout: 10s
+    retries: 5
+
+x-base-mongocfg_dependencies: &mongocfg_dependencies
+  depends_on:
+    mongors1n1:
+      condition: service_healthy
+    mongors1n2:
+      condition: service_healthy
+    mongors1n3:
+      condition: service_healthy
+    mongors2n1:
+      condition: service_healthy
+    mongors2n2:
+      condition: service_healthy
+    mongors2n3:
+      condition: service_healthy
+
+x-base-mongos_dependencies: &mongos_dependencies
+  depends_on:
+    mongocfg1:
+      condition: service_healthy
+    mongocfg2:
+      condition: service_healthy
+    mongocfg3:
+      condition: service_healthy
 
 services:
 
@@ -435,166 +475,144 @@ services:
       - ${RECOMMENDER_GRPC_PORT}
 
   mongors1n1:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors1n1
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data1:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data1:/data/db
 
   mongors1n2:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors1n2
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data2:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data2:/data/db
 
   mongors1n3:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors1n3
-    image: mongo
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data3:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data3:/data/db
 
   mongors2n1:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors2n1
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data4:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data4:/data/db
 
   mongors2n2:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors2n2
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data5:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data5:/data/db
 
   mongors2n3:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongors2n3
-    image: mongo
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-data6:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/data6:/data/db
 
   mongocfg1:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *mongocfg_dependencies
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongocfg1
-    image: mongo
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-config1:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/config1:/data/db
 
   mongocfg2:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *mongocfg_dependencies
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongocfg2
-    image: mongo
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-config2:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/config2:/data/db
 
   mongocfg3:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *mongocfg_dependencies
+    <<: *base-mongodb_cluster-unit-healthcheck
     container_name: mongocfg3
-    image: mongo
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
-    expose:
-      - "27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - mongo_cluster1-config3:/data/db
-    profiles: 
-      - dev_graduate
-      - prod
+      - /tmp/mongo_cluster/config3:/data/db
 
   mongos1:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *mongos_dependencies
     container_name: mongos1
-    image: mongo
     hostname: mongos1
-    depends_on:
-      - mongocfg1
-      - mongocfg2
-      - mongocfg3
     command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
-    expose:
-      - "27017"
+    ports:
+      - "27017:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-    profiles: 
-      - dev_graduate
-      - prod
 
   mongos2:
-    <<: *base_service
+    <<: *base-mongodb_cluster-unit
+    <<: *mongos_dependencies
     container_name: mongos2
-    image: mongo
     hostname: mongos2
-    depends_on:
-      - mongocfg1
-      - mongocfg2
-      - mongocfg3
     command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
-    expose:
-      - "27017"
+    ports:
+      - "27018:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-    profiles: 
+
+  mongo_cluster_initer:
+    <<: *base_service
+    image: mongo
+    container_name: mongo_cluster_initer
+    command: ["/bin/bash", "-c", "chmod +x /opt/init_mongodb_cluster.sh && /opt/init_mongodb_cluster.sh"]
+    volumes:
+      - ./recommender_system/init_mongodb_cluster.sh:/opt/init_mongodb_cluster.sh
+    profiles:
+      - mongo
       - dev_graduate
       - prod
+    depends_on:
+      - mongos1
+      - mongos2
+    healthcheck:
+      test: bash -c "[ -f "/opt/ready.flag" ]"
+      interval: 20s
+      timeout: 120s
+      retries: 10
+
+  mongodb_initer:
+    <<: *base_service
+    build:
+      context: ./recommender_system/
+      dockerfile: mongodb_initer/Dockerfile
+    container_name: mongodb_initer
+    profiles:
+      - mongo
+      - dev_graduate
+      - prod
+    depends_on:
+      mongo_cluster_initer:
+        condition: service_healthy
 
   airflow-db:
     <<: *base_service
