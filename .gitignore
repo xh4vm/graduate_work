@@ -143,3 +143,4 @@ commands.md
 .env_local
 backend/auth/api/migrations
 .data
+/recommender_system/airflow/logs/

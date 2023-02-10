@@ -31,6 +31,11 @@ endef
 .PHONY: interactive build grad services
 grad: create-venv poetry-install-build-grad build-dockers-grad
 
+.PHONY: interactive up grad services
+grad-up:
+	$(call log,Up grad containers)
+	docker-compose --profile dev_graduate up
+
 .PHONY: clean all docker images and pyc-files
 clean-all: clean-pyc clean-all-dockers
 

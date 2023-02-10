@@ -21,7 +21,7 @@ ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
 RUN export JAVA_HOME
 
 USER airflow
-ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/
+ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/:/opt/airflow/modules/als_top/
 
 COPY ./requirements.txt .
 COPY --chown=airflow:root ./dags /opt/airflow/dags

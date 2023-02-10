@@ -8,8 +8,8 @@ from src.core.config import AIRFLOW_DAG_MOVIE_FRAME_CONFIG
 
 default_args = {
     'owner': 'airflow',    
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 5,
+    'retry_delay': timedelta(minutes=1),
 }
 
 dag_movie_frame_recommender_system = DAG(
