@@ -5,10 +5,10 @@ from pydantic import BaseSettings, BaseModel
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
 
-
+pass
 class CommonSettings(BaseSettings):
     class Config:
-        env_file = Path(BASE_DIR, '.env')
+        env_file = Path(ROOT_DIR, '.env')
         env_file_encoding = 'utf-8'
 
 
