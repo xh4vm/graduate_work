@@ -487,7 +487,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data1:/data/db
+      - mongo_cluster1-data1:/data/db
 
   mongors1n2:
     <<: *base-mongodb_cluster-unit
@@ -496,7 +496,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data2:/data/db
+      - mongo_cluster1-data2:/data/db
 
   mongors1n3:
     <<: *base-mongodb_cluster-unit
@@ -505,7 +505,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data3:/data/db
+      - mongo_cluster1-data3:/data/db
 
   mongors2n1:
     <<: *base-mongodb_cluster-unit
@@ -514,7 +514,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data4:/data/db
+      - mongo_cluster1-data4:/data/db
 
   mongors2n2:
     <<: *base-mongodb_cluster-unit
@@ -523,7 +523,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data5:/data/db
+      - mongo_cluster1-data5:/data/db
 
   mongors2n3:
     <<: *base-mongodb_cluster-unit
@@ -532,7 +532,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data6:/data/db
+      - mongo_cluster1-data6:/data/db
 
   mongocfg1:
     <<: *base-mongodb_cluster-unit
@@ -542,7 +542,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config1:/data/db
+      - mongo_cluster1-config1:/data/db
 
   mongocfg2:
     <<: *base-mongodb_cluster-unit
@@ -552,7 +552,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config2:/data/db
+      - mongo_cluster1-config2:/data/db
 
   mongocfg3:
     <<: *base-mongodb_cluster-unit
@@ -562,7 +562,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config3:/data/db
+      - mongo_cluster1-config3:/data/db
 
   mongos1:
     <<: *base-mongodb_cluster-unit
