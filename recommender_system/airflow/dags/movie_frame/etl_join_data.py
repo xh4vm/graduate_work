@@ -16,7 +16,9 @@ analytics_dataframe = spark.read.schema(OLAP).parquet(
 )
 logger.info(analytics_dataframe.show(10, False))
 
-metadata_dataframe = spark.read.schema(METADATA).parquet('hdfs://namenode:9000/parquet/movie-frame-etl-admin-api-to-parquet')
+metadata_dataframe = spark.read.schema(METADATA).parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-admin-api-to-parquet'
+)
 
 logger.info(metadata_dataframe.show(10, False))
 
@@ -33,6 +35,8 @@ dataframe = (analytics_dataframe
 logger.info(dataframe.count())
 logger.info(dataframe.show(10, False))
 
-dataframe.write.parquet('hdfs://namenode:9000/parquet/movie-frame-etl-join-data', mode='overwrite')
+dataframe.write.parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-join-data', mode='overwrite'
+)
 
 logger.info('[+] Success transforming analytics data with metadata')

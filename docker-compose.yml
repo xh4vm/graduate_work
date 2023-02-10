@@ -54,6 +54,8 @@ x-spark-worker: &base_spark_worker
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
+    - ./recommender_system/airflow/modules:/opt/modules
+    - ./recommender_system/airflow/fake_data:/tmp/metadata
   depends_on:
     spark-master:
       condition: service_healthy
@@ -113,7 +115,7 @@ x-base-mongodb-cluster-unit: &base-mongodb_cluster-unit
 x-base-mongodb-cluster-unit-healthcheck: &base-mongodb_cluster-unit-healthcheck
   healthcheck:
     test: [ "CMD","mongosh", "--eval", "db.adminCommand('ping')" ]
-    interval: 10s
+    interval: 30s
     timeout: 10s
     retries: 5
 
@@ -140,6 +142,7 @@ x-base-mongos_dependencies: &mongos_dependencies
       condition: service_healthy
     mongocfg3:
       condition: service_healthy
+
 x-datanode: &hadoop-datanode
   image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
   restart: always
@@ -222,7 +225,6 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka01:9093,2@kafka02:9093,3@kafka03:9093'
       KAFKA_PROCESS_ROLES: 'broker,controller'
 
-
   kafka02:
     <<: *base_service
     <<: *base_kafka
@@ -240,7 +242,6 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka01:9093,2@kafka02:9093,3@kafka03:9093'
       KAFKA_PROCESS_ROLES: 'broker,controller'
-
 
   kafka03:
     <<: *base_service
@@ -486,7 +487,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data1:/data/db
+      - mongo_cluster1-data1:/data/db
 
   mongors1n2:
     <<: *base-mongodb_cluster-unit
@@ -495,7 +496,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data2:/data/db
+      - mongo_cluster1-data2:/data/db
 
   mongors1n3:
     <<: *base-mongodb_cluster-unit
@@ -504,7 +505,7 @@ services:
     command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data3:/data/db
+      - mongo_cluster1-data3:/data/db
 
   mongors2n1:
     <<: *base-mongodb_cluster-unit
@@ -513,7 +514,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data4:/data/db
+      - mongo_cluster1-data4:/data/db
 
   mongors2n2:
     <<: *base-mongodb_cluster-unit
@@ -522,7 +523,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data5:/data/db
+      - mongo_cluster1-data5:/data/db
 
   mongors2n3:
     <<: *base-mongodb_cluster-unit
@@ -531,7 +532,7 @@ services:
     command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/data6:/data/db
+      - mongo_cluster1-data6:/data/db
 
   mongocfg1:
     <<: *base-mongodb_cluster-unit
@@ -541,7 +542,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config1:/data/db
+      - mongo_cluster1-config1:/data/db
 
   mongocfg2:
     <<: *base-mongodb_cluster-unit
@@ -551,7 +552,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config2:/data/db
+      - mongo_cluster1-config2:/data/db
 
   mongocfg3:
     <<: *base-mongodb_cluster-unit
@@ -561,7 +562,7 @@ services:
     command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /tmp/mongo_cluster/config3:/data/db
+      - mongo_cluster1-config3:/data/db
 
   mongos1:
     <<: *base-mongodb_cluster-unit
@@ -591,7 +592,7 @@ services:
     container_name: mongo_cluster_initer
     command: ["/bin/bash", "-c", "chmod +x /opt/init_mongodb_cluster.sh && /opt/init_mongodb_cluster.sh"]
     volumes:
-      - ./recommender_system/init_mongodb_cluster.sh:/opt/init_mongodb_cluster.sh
+      - ./recommender_system/mongodb/init_mongodb_cluster.sh:/opt/init_mongodb_cluster.sh
     profiles:
       - mongo
       - dev_graduate
@@ -805,6 +806,11 @@ services:
       - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
     env_file:
       - .env
+    healthcheck:
+      test: curl http://namenode:9870 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   datanode01:
     <<: *base_service

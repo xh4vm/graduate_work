@@ -102,6 +102,12 @@ services:
     depends_on:
       producer-storage:
         condition: service_healthy
+      spark-master:
+        condition: service_healthy
+      airflow-webserver:
+        condition: service_healthy
+      flower:
+        condition: service_healthy
     ports:
       - ${SPARK_MASTER_WEB_PORT}:${SPARK_MASTER_WEB_PORT}
 

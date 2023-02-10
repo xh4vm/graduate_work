@@ -2,7 +2,8 @@ import pyspark.sql.functions as F
 from pydantic import BaseModel
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
-from pyspark.sql.functions import col, row_number
+from pyspark.sql.types import ArrayType,StringType
+from pyspark.sql.functions import col, row_number, from_json
 from als_src.als_core.config import SETTINGS
 from als_src.als_core.settings import AlsHeadersCol, AlsParameters
 from als_src.predicter.als_predicter import AlsPredictor
@@ -98,7 +99,10 @@ class Recommender:
 def load_from_csv(spark: SparkSession, path_to_csv: str) -> DataFrame:
     demo_data = (
         spark.read.option('header', 'True').csv(path_to_csv, sep=',')
-        .select(SETTINGS.als.headers_col.user_col, SETTINGS.prediction_movies_col)
+        .select(
+            SETTINGS.als.headers_col.user_col,
+            from_json(col(SETTINGS.prediction_movies_col), ArrayType(StringType())).alias(SETTINGS.prediction_movies_col)
+        )
     )
     demo_data.cache()
     demo_data.count()
