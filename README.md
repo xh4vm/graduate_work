@@ -1,3 +1,4 @@
+# Проектная работа: диплом
 [![Python version](https://img.shields.io/badge/python-3.10-informational)](https://www.python.org)
 [![Spark verions](https://img.shields.io/badge/spark-3.3.1-informational)](https://spark.apache.org/)
 [![Confluent kafka](https://img.shields.io/badge/confluent_kafka-7.3.0-informational)](https://www.confluent.io/apache-kafka-vs-confluent/)
@@ -7,8 +8,6 @@
 [![Mongo](https://img.shields.io/badge/mongo-6.0.4-informational)](https://www.mongodb.com/)
 [![Grpc](https://img.shields.io/badge/grpc-1.47.0-informational)](https://grpc.io/)
 [![Nginx](https://img.shields.io/badge/nginx-1.23.1-informational)](https://nginx.org/ru/)
-
-# Проектная работа: диплом
 
 [Ссылка на работу](https://github.com/xh4vm/graduate_work)
 
