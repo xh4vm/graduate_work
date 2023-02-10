@@ -1,29 +1,22 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType
 from loguru import logger
+
+from src.core.config import HDFS_CONFIG, SPARK_CONFIG
+from src.schema.movie_frame import OLAP, METADATA
 
 
 spark = SparkSession \
     .builder \
-    .master('spark://spark-master:7077') \
+    .master(f'{SPARK_CONFIG.DRIVER}://{SPARK_CONFIG.HOST}:{SPARK_CONFIG.PORT}') \
     .appName('movie_frame-etl_join_data') \
     .getOrCreate()
 
-analytics_schema = StructType(fields=[
-    StructField(name='metric', dataType=DoubleType(), nullable=True),
-    StructField(name='movie_id', dataType=StringType(), nullable=True),
-    StructField(name='user_id', dataType=StringType(), nullable=True),
-])
-
-analytics_dataframe = spark.read.schema(analytics_schema).parquet('/tmp/movie-frame-etl-clickhouse-to-parquet')
+analytics_dataframe = spark.read.schema(OLAP).parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-clickhouse-to-parquet'
+)
 logger.info(analytics_dataframe.show(10, False))
 
-metadata_schema = StructType(fields=[
-    StructField(name='duration', dataType=LongType(), nullable=False),
-    StructField(name='id', dataType=StringType(), nullable=False),
-])
-
-metadata_dataframe = spark.read.schema(metadata_schema).parquet('/tmp/movie-frame-etl-admin-api-to-parquet')
+metadata_dataframe = spark.read.schema(METADATA).parquet('hdfs://namenode:9000/parquet/movie-frame-etl-admin-api-to-parquet')
 
 logger.info(metadata_dataframe.show(10, False))
 
@@ -40,6 +33,6 @@ dataframe = (analytics_dataframe
 logger.info(dataframe.count())
 logger.info(dataframe.show(10, False))
 
-dataframe.write.mode('overwrite').parquet('/tmp/movie-frame-etl-join-data')
+dataframe.write.parquet('hdfs://namenode:9000/parquet/movie-frame-etl-join-data', mode='overwrite')
 
 logger.info('[+] Success transforming analytics data with metadata')

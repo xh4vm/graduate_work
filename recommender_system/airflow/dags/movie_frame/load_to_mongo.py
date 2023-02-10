@@ -1,25 +1,22 @@
 import asyncio
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, ArrayType
 from loguru import logger
 
-from src.core.config import MONGO_CONFIG
+from src.core.config import MONGO_CONFIG, HDFS_CONFIG, SPARK_CONFIG
 from src.transform.recommendation import RecommendationTransformer
 from src.load.mongo import AsyncMongoLoader
+from src.schema.movie_frame import RECOMMENDATION
 
 
 spark = SparkSession \
     .builder \
-    .master('spark://spark-master:7077') \
+    .master(f'{SPARK_CONFIG.DRIVER}://{SPARK_CONFIG.HOST}:{SPARK_CONFIG.PORT}') \
     .appName('movie_frame-load_to_mongo') \
     .getOrCreate()
 
-schema = StructType(fields=[
-    StructField(name='movies_id', dataType=ArrayType(elementType=StringType), nullable=False),
-    StructField(name='user_id', dataType=StringType(), nullable=False),
-])
-
-dataframe = spark.read.schema(schema).parquet('/tmp/movie-frame-als')
+dataframe = spark.read.schema(RECOMMENDATION).parquet(
+    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-als'
+)
 
 logger.info('[*] Loading recomendations to mongo')
 
