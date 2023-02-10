@@ -11,10 +11,12 @@ x-redis: &base_redis
   image: redis:7.0-alpine
   container_name: redis
   restart: unless-stopped
+  command: >
+    --requirepass ${REDIS_PASSWORD}
   expose:
     - ${REDIS_PORT}
   healthcheck:
-    test: [ "CMD", "redis-cli","ping" ]
+    test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
     interval: 30s
     timeout: 10s
     retries: 5
@@ -46,7 +48,7 @@ x-base-kafka: &base_kafka
   command: "bash -c 'if [ ! -f /tmp/start.sh ]; then echo \"ERROR: Did you forget the start.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/start.sh && /etc/confluent/docker/run ; fi'"
 
 x-spark-worker: &base_spark_worker
-  image: docker.io/bitnami/spark:3.0.1
+  build: ./recommender_system/spark
   restart: on-failure
   volumes:
     - /etc/localtime:/etc/localtime:ro
@@ -57,13 +59,53 @@ x-spark-worker: &base_spark_worker
       condition: service_healthy
   environment:
     - SPARK_MODE=worker
-    - SPARK_MASTER_URL=spark://spark-master:${SPARK_MASTER_PORT}
+    - SPARK_MASTER_URL=${SPARK_MASTER_DRIVER}://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT}
     - SPARK_WORKER_MEMORY=2G
     - SPARK_WORKER_CORES=1
     - SPARK_RPC_AUTHENTICATION_ENABLED=no
     - SPARK_RPC_ENCRYPTION_ENABLED=no
     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
     - SPARK_SSL_ENABLED=no
+
+x-grpc: &base_grpc
+  build: ./recommender_system/grpc
+  container_name: recommender_grpc
+  volumes:
+    - ./recommender_system/grpc:/opt/grpc
+  env_file: .env
+
+x-airflow-common: &airflow-common
+  build: ./recommender_system/airflow
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
+    AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
+  volumes:
+    - ./recommender_system/airflow/fake_data/movies.csv:/opt/metadata/movies.csv
+    - ./recommender_system/airflow/dags:/opt/airflow/dags
+    - ./recommender_system/airflow/src:/opt/airflow/src
+    - ./recommender_system/airflow/logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  env_file: .env
+  depends_on: &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    airflow-db:
+      condition: service_healthy
+
+x-datanode: &hadoop-datanode
+  image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+  restart: always
+  environment:
+    SERVICE_PRECONDITION: "namenode:9870"
+    CORE_CONF_fs_defaultFS: hdfs://namenode:9000
+  expose:
+    - 9864
 
 
 services:
@@ -190,7 +232,7 @@ services:
       - kafka02
       - kafka03
     ports:
-      - "9021:9021"
+      - 9021:9021
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka01:9092'
       CONTROL_CENTER_REPLICATION_FACTOR: 1
@@ -262,8 +304,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node1:/etc/clickhouse-server
-    ports:
-      - "9000:9000"
 
   clickhouse-node2:
     <<: *base_service
@@ -276,7 +316,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node2:/etc/clickhouse-server
-
 
   clickhouse-node3:
     <<: *base_service
@@ -291,7 +330,6 @@ services:
       - ./ugc/clickhouse/initdb:/docker-entrypoint-initdb.d
       - ./ugc/clickhouse/config/metrika.xml:/etc/metrika.xml
       - ./ugc/clickhouse/config/node3:/etc/clickhouse-server
-
 
   clickhouse-node4:
     <<: *base_service
@@ -309,7 +347,7 @@ services:
 
   spark-master:
     <<: *base_service
-    image: docker.io/bitnami/spark:3.0.1
+    build: ./recommender_system/spark
     container_name: spark-master
     hostname: spark-master
     restart: on-failure
@@ -329,7 +367,7 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     healthcheck:
-      test: curl http://spark-master:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      test: curl http://${SPARK_MASTER_HOST}:${SPARK_MASTER_WEB_PORT} >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5
@@ -366,32 +404,424 @@ services:
     build: ./recommender_system/jupyter-notebook/
     container_name: jupyter-notebook
     hostname: jupyter-notebook
+    user: root
     depends_on:
       spark-master:
         condition: service_healthy
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/jupyter-notebook/work:/home/developer/work
-      - ./recommender_system/jupyter-notebook/clickhouse-native-jdbc-shaded-2.6.4.jar:/opt/clickhouse-native-jdbc-shaded-2.6.4.jar
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
     profiles:
       - dev_graduate
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
-  recommender_grpc:
+  recommender_grpc_dev:
     <<: *base_service
-    build: ./recommender_system/grpc
-    container_name: recommender_grpc
-    volumes:
-      - ./recommender_system/grpc:/opt/grpc
-    env_file: .env
+    <<: *base_grpc
     profiles: 
       - dev_graduate
+    ports:
+      - ${RECOMMENDER_GRPC_PORT}:${RECOMMENDER_GRPC_PORT}
+
+  recommender_grpc:
+    <<: *base_service
+    <<: *base_grpc
+    profiles: 
       - prod
     expose:
       - ${RECOMMENDER_GRPC_PORT}
 
+  mongors1n1:
+    <<: *base_service
+    container_name: mongors1n1
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data1:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongors1n2:
+    <<: *base_service
+    container_name: mongors1n2
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data2:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongors1n3:
+    <<: *base_service
+    container_name: mongors1n3
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data3:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongors2n1:
+    <<: *base_service
+    container_name: mongors2n1
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data4:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongors2n2:
+    <<: *base_service
+    container_name: mongors2n2
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data5:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongors2n3:
+    <<: *base_service
+    container_name: mongors2n3
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-data6:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongocfg1:
+    <<: *base_service
+    container_name: mongocfg1
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-config1:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongocfg2:
+    <<: *base_service
+    container_name: mongocfg2
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-config2:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongocfg3:
+    <<: *base_service
+    container_name: mongocfg3
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_cluster1-config3:/data/db
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongos1:
+    <<: *base_service
+    container_name: mongos1
+    image: mongo
+    hostname: mongos1
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+      - mongocfg3
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    profiles: 
+      - dev_graduate
+      - prod
+
+  mongos2:
+    <<: *base_service
+    container_name: mongos2
+    image: mongo
+    hostname: mongos2
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+      - mongocfg3
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    profiles: 
+      - dev_graduate
+      - prod
+
+  airflow-db:
+    <<: *base_service
+    image: postgres:13-alpine
+    container_name: airflow-db
+    env_file: .env
+    restart: always
+    environment:
+      - POSTGRES_USER=${AIRFLOW_DB_USER}
+      - POSTGRES_PASSWORD=${AIRFLOW_DB_PASSWORD}
+      - POSTGRES_DB=${AIRFLOW_DB_NAME}
+    profiles: 
+      - dev_graduate
+      - prod
+    volumes:
+      - spark-airflow-db:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${AIRFLOW_DB_USER} -D ${AIRFLOW_DB_NAME} > /dev/null; if [[ $$? == 0 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-webserver:
+    <<: *base_service
+    <<: *airflow-common
+    container_name: airflow-webserver
+    command: webserver
+    ports:
+      - ${AIRFLOW_PORT_NGINX}:${AIRFLOW_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://airflow-webserver:${AIRFLOW_PORT}/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    profiles: 
+      - dev_graduate
+      - prod
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *base_service
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ['CMD-SHELL', 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    profiles: 
+      - dev_graduate
+      - prod
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker:
+    <<: *base_service
+    <<: *airflow-common
+    container_name: airflow-worker
+    command: celery worker
+    healthcheck:
+      test:
+        - 'CMD-SHELL'
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    profiles: 
+      - dev_graduate
+      - prod
+    environment:
+      <<: *airflow-common-env
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *base_service
+    <<: *airflow-common
+    container_name: airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        function ver() {
+          printf "%04d%04d%04d%04d" $${1//./ }
+        }
+        airflow_version=$$(gosu airflow airflow version)
+        airflow_version_comparable=$$(ver $${airflow_version})
+        min_airflow_version=2.2.0
+        min_airflow_version_comparable=$$(ver $${min_airflow_version})
+        if (( airflow_version_comparable < min_airflow_version_comparable )); then
+          echo
+          echo -e "\033[1;31mERROR!!!: Too old Airflow version $${airflow_version}!\e[0m"
+          echo "The minimum Airflow version supported: $${min_airflow_version}. Only use this or higher!"
+          echo
+          exit 1
+        fi
+        if [[ -z "${AIRFLOW_UID}" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+          echo "If you are on Linux, you SHOULD follow the instructions below to set "
+          echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+          echo "For other operating systems you can get rid of the warning with manually created .env file:"
+          echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#setting-the-right-airflow-user"
+          echo
+        fi
+        one_meg=1048576
+        mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
+        cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
+        disk_available=$$(df / | tail -1 | awk '{print $$4}')
+        warning_resources="false"
+        if (( mem_available < 4000 )) ; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
+          echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
+          echo
+          warning_resources="true"
+        fi
+        if (( cpus_available < 2 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
+          echo "At least 2 CPUs recommended. You have $${cpus_available}"
+          echo
+          warning_resources="true"
+        fi
+        if (( disk_available < one_meg * 10 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
+          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
+          echo
+          warning_resources="true"
+        fi
+        if [[ $${warning_resources} == "true" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
+          echo "Please follow the instructions to increase amount of resources available:"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html#before-you-begin"
+          echo
+        fi
+        mkdir -p /sources/logs /sources/dags /sources/src
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,src}
+        exec /entrypoint airflow version
+    profiles: 
+      - dev_graduate
+      - prod
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    user: "0:0"
+    volumes:
+      - ./recommender_system/airflow:/sources
+
+  flower:
+    <<: *base_service
+    <<: *airflow-common
+    container_name: airflow-flower
+    command: celery flower
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://flower:${FLOWER_PORT}/"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    profiles: 
+      - dev_graduate
+      - prod
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  namenode:
+    <<: *base_service
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - 9870:9870
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    env_file:
+      - .env
+
+  datanode01:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode01
+    volumes:
+      - hadoop_datanode01:/hadoop/dfs/data
+    env_file:
+      - .env
+    
+  datanode02:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode02
+    volumes:
+      - hadoop_datanode02:/hadoop/dfs/data
+    env_file:
+      - .env
+
+  datanode03:
+    <<: *base_service
+    <<: *hadoop-datanode
+    container_name: datanode03
+    volumes:
+      - hadoop_datanode03:/hadoop/dfs/data
+    env_file:
+      - .env
 
 networks:
   graduate:
@@ -400,3 +830,17 @@ networks:
 volumes:
   redis-data:
   clickhouse-zookeeper:
+  mongo_cluster1-config1:
+  mongo_cluster1-config2:
+  mongo_cluster1-config3:
+  mongo_cluster1-data1:
+  mongo_cluster1-data2:
+  mongo_cluster1-data3:
+  mongo_cluster1-data4:
+  mongo_cluster1-data5:
+  mongo_cluster1-data6:
+  spark-airflow-db:
+  hadoop_namenode:
+  hadoop_datanode01:
+  hadoop_datanode02:
+  hadoop_datanode03:

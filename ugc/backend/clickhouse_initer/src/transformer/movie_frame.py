@@ -13,7 +13,6 @@ class MovieFrameTransformer(BaseTransformer):
             yield MovieFrameDatagram(
                 user_id=data.get('user_id'),
                 movie_id=data.get('movie_id'),
-                movie_duration=movie_rating.duration,
                 frame_time=movie_rating.start,
                 event_type=EventType.STARTING
             )
@@ -21,7 +20,6 @@ class MovieFrameTransformer(BaseTransformer):
             yield MovieFrameDatagram(
                 user_id=data.get('user_id'),
                 movie_id=data.get('movie_id'),
-                movie_duration=movie_rating.duration,
                 frame_time=movie_rating.stop,
                 event_type=EventType.STOPPED
             )

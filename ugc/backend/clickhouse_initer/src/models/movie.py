@@ -21,7 +21,6 @@ class MovieFrameDatagram(JSONModel):
     user_id: str
     movie_id: str
     frame_time: int
-    movie_duration: int
     event_type: EventType = Field(default=EventType.VIEWED)
     event_timestamp: int = Field(default_factory=lambda : int(datetime.utcnow().timestamp()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -34,24 +33,15 @@ class MovieFrameDatagram(JSONModel):
         except ValueError:
             return str(uuid.uuid5(namespace=NAMESPACE_ID, name=value))
 
-    @validator('movie_duration', 'frame_time')
+    @validator('frame_time')
     def frame_time_ge_zero(cls, value: int) -> int:
         if value >= 0:
             return value
 
-        raise ValueError('"frame_time" and "movie_duration" must be greater than zero')
-
-    @validator('movie_duration')
-    def movie_duration_ge_frame_time(cls, value: int, values: dict[str, Any], **kwargs) -> int:
-        if values.get('frame_time') is not None and value >= values.get('frame_time'):
-            return value
-
-        raise ValueError('"movie_duration" must be greater than "frame_time"')
-
+        raise ValueError('"frame_time" must be greater than zero')
 
 class MovieRating(JSONModel):
     rating: float
-    duration: int = Field(default_factory=lambda: randint(1, 3) * 60 * 60 * 60)
 
     @validator('rating')
     def rating_ge_zero(cls, value: float) -> float:
@@ -63,4 +53,4 @@ class MovieRating(JSONModel):
 
     @property
     def stop(self) -> int:
-        return self.rating * self.duration + self.start
+        return self.rating * randint(1, 3) * 60 * 60 * 60 + self.start
