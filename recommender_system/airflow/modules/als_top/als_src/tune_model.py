@@ -63,13 +63,17 @@ class AlsTuner:
         for c_rank, c_regular, c_iter, c_alpha in tqdm(itertools.product(
             self.als_params.rank, self.als_params.regular, self.als_params.iter, self.als_params.alpha
         )):
-            als = self.model.setAlpha().setMaxIter(c_iter).setRank(c_rank).setRegParam(c_regular)
+            als = self.model.setAlpha(c_alpha).setMaxIter(c_iter).setRank(c_rank).setRegParam(c_regular)
 
             new_model = als.fit(self.data_params.train_data)
 
             predictions = new_model.transform(self.data_params.valid_data)
 
-            evaluator = RegressionEvaluator(metricName="rmse", labelCol="rating", predictionCol="prediction")
+            evaluator = RegressionEvaluator(
+                metricName="rmse",
+                labelCol=self.als_params.headers_col.rating_col,
+                predictionCol=self.als_params.headers_col.prediction_col,
+            )
 
             dist = evaluator.evaluate(predictions)
 
@@ -97,7 +101,7 @@ class AlsTuner:
     def tune_als(self):
 
         self.data_params.train_data, self.data_params.valid_data = \
-            self.data_params.scores_dataframe.randomSplit([6, 4], seed=self.data_params.seed)
+            self.data_params.scores_dataframe.randomSplit([0.6, 0.4], seed=self.data_params.seed)
 
         logger.info('Training: {0}, validation: {1}'.format(
             self.data_params.train_data.count(),
@@ -111,7 +115,7 @@ class AlsTuner:
         write_best_parameters(self.new_als_params.dict(), file_path=self.als_params.model_params_file_path)
 
 
-def turn_als(data_df: DataFrame):
+def perform_tune_als(data_df: DataFrame):
 
     tuner = AlsTuner(
         income_data=data_df,
