@@ -2,7 +2,7 @@ pyspark==3.3.1
 Faker==16.8.1
 ipykernel==6.21.1
 jupyter==1.0.0
-mypy=1.0.0
+mypy==1.0.0
 numpy==1.24.2
 pandas==1.5.3
 loguru==0.6.0

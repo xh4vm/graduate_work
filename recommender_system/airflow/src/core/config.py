@@ -6,6 +6,7 @@ from pydantic import BaseSettings, Field
 
 class AirflowDagMovieFrameSettings(BaseSettings):
     SCHEDULE: str
+    TUNE_ALS_SCHEDULE: str
 
     class Config:
         env_prefix = 'AIRFLOW_DAG_MOVIE_FRAME_'

@@ -1,8 +1,17 @@
-package = []
+[[package]]
+name = "airflow"
+version = "0.6"
+description = "Placeholder for the old Airflow package"
+category = "main"
+optional = false
+python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "53f2eabc9c26446fbcc00d348c47878e118afc2054778c3c803a0a8028af27d9"
+content-hash = "a9a02d4196c0eb38f6da0803146036a7fe4a22a2e98b75cdcc81c077a20f2c51"
 
 [metadata.files]
+airflow = [
+    {file = "airflow-0.6.tar.gz", hash = "sha256:a54d363e92af87c2ff40ac4c22944106cb8afbc2d8d09aba85e390b68ba01d97"},
+]

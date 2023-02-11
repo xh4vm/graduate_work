@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from loguru import logger
-from modules.als_top.als_src.recommender import prepare_data
+from modules.als_top.als_src.tune_model import perform_tune_als
 
 from src.core.config import HDFS_CONFIG, SPARK_CONFIG
 from src.schema.movie_frame import ALS
@@ -16,24 +16,13 @@ dataframe = spark.read.schema(ALS).parquet(
     f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-etl-join-data'
 )
 
-logger.info('[*] Starting analyzing with ALS')
+logger.info('[*] Starting Tune ALS')
 
 logger.info(dataframe.show(10, False))
 
-predict_top_data = prepare_data(
-    spark,
-    dataframe,
-)
-
-# demo_mode = True,
-# path_from_csv_file = '/tmp/metadata/fake_als_top_result.csv',
-
+predict_top_data = perform_tune_als(dataframe)
 logger.info(predict_top_data.count())
 logger.info(predict_top_data.show(10, False))
 
-logger.info('[+] Success analyzing with ALS')
+logger.info('[+] Success Tune ALS')
 
-predict_top_data.write.parquet(
-    f'{HDFS_CONFIG.DRIVER}://{HDFS_CONFIG.HOST}:{HDFS_CONFIG.PORT}/{HDFS_CONFIG.PATH}/movie-frame-als',
-    mode='overwrite'
-)
