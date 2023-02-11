@@ -5,3 +5,4 @@ pandas==1.5.3
 loguru==0.6.0
 clickhouse_driver==0.2.5
 pydantic==1.10.4
+numpy

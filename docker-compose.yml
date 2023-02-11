@@ -55,6 +55,7 @@ x-spark-worker: &base_spark_worker
     - /etc/timezone:/etc/timezone:ro
     - ./recommender_system/spark/.data:/opt/bitnami/spark/work/
     - ./recommender_system/airflow/modules:/opt/modules
+    - ./recommender_system/jupyter-notebook/work:/opt/work
     - ./recommender_system/airflow/fake_data:/tmp/metadata
   depends_on:
     spark-master:
@@ -172,6 +173,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -205,6 +207,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
@@ -413,6 +416,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     expose:
       - ${SPARK_MASTER_WEB_PORT}
       - ${SPARK_MASTER_PORT}
@@ -436,6 +440,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
 
   spark-worker02:
     <<: *base_service
@@ -445,6 +450,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
 
   spark-worker03:
     <<: *base_service
@@ -454,6 +460,7 @@ services:
     profiles:
       - dev_graduate
       - prod
+      - spark
     
   jupyter-notebook:
     <<: *base_service
@@ -467,10 +474,12 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/airflow/modules:/home/developer/modules
-      - ./recommender_system/jupyter-notebook/work:/home/developer/work
+      - ./recommender_system/airflow/modules:/home/jovyan/work/modules
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system/jupyter-notebook/work:/opt/work
     profiles:
       - dev_graduate
+      - spark
     ports:
       - ${NOTEBOOK_PORT}:${NOTEBOOK_PORT}
 
