@@ -477,6 +477,7 @@ services:
       - ./recommender_system/airflow/modules:/home/jovyan/work/modules
       - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
       - ./recommender_system/jupyter-notebook/work:/opt/work
+      - ./.env:/home/.env
     profiles:
       - dev_graduate
       - spark
