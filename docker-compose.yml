@@ -695,7 +695,6 @@ services:
     <<: *base_service
     <<: *airflow-common
     container_name: airflow-init
-    entrypoint: /bin/bash
     command: ["/bin/bash", "-c", "chmod +x /opt/entrypoint_airflow.sh && /opt/entrypoint_airflow.sh"]
     profiles: 
       - dev_graduate
