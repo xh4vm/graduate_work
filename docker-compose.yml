@@ -695,7 +695,8 @@ services:
     <<: *base_service
     <<: *airflow-common
     container_name: airflow-init
-    command: ["/bin/bash", "-c", "chmod +x /opt/entrypoint_airflow.sh && /opt/entrypoint_airflow.sh"]
+    entrypoint: /bin/bash
+    command: [ "-c", "chmod +x /opt/airflow/entrypoint_airflow.sh && /opt/airflow/entrypoint_airflow.sh" ]
     profiles: 
       - dev_graduate
       - prod
@@ -707,7 +708,6 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     user: "0:0"
     volumes:
-      - ./recommender_system/airflow/entrypoint_airflow.sh:/opt/entrypoint_airflow.sh
       - ./recommender_system/airflow:/sources
 
   flower:

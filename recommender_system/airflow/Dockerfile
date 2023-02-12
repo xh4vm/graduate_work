@@ -24,6 +24,7 @@ USER airflow
 ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/:/opt/airflow/modules/als_top/
 
 COPY ./requirements.txt .
+COPY ./entrypoint_airflow.sh .
 COPY --chown=airflow:root ./dags /opt/airflow/dags
 
 RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
