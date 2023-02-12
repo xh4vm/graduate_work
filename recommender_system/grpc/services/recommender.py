@@ -15,7 +15,7 @@ class RecommenderService:
         recomendation: Recommendation | None = await self._cache.get(key=f'recommendation::{user.id_str}')
         
         if recomendation is not None:
-            return recomendation
+            return Recommendation(**recomendation)
 
         logger.info('Looking database for user "%s"', user.id_str)
         raw_document = await self._db.last_one(
@@ -35,6 +35,6 @@ class RecommenderService:
 
         if save_cache:
             logger.info('Saving data for user "%s"', user.id_str)
-            self._cache.set(key=f'recommendation::{user.id_str}', data=recomendation)
+            await self._cache.set(key=f'recommendation::{user.id_str}', data=recomendation.dict())
         
         return recomendation

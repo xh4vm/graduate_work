@@ -8,9 +8,9 @@ class BaseCache(ABC):
         '''Клиент БД'''
 
     @abstractmethod
-    def get(self, key: str, default_value: str | None = None) -> str | None:
+    async def get(self, key: str, default_value: str | None = None) -> str | None:
         """Получение данных из кеша"""
 
     @abstractmethod
-    def set(self, key: str, data: Any) -> None:
+    async def set(self, key: str, data: Any) -> None:
         """Установка данных в кеш"""

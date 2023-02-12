@@ -1,24 +1,16 @@
 import backoff
 from pydantic.main import ModelMetaclass
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.errors import ServerSelectionTimeoutError
-from load.base import BaseLoader
+from load.base import BaseLoader, BaseClient
 from loguru import logger
 from core.config import DBSettings, BACKOFF_CONFIG
 from typing import Iterator, List, Any
 
 
-def is_alive(conn: AsyncIOMotorClient) -> bool:
-    try:
-        conn.server_info()
-    except ServerSelectionTimeoutError as exception:
-        logger.exception(exception)
-
-
-class AsyncMongoLoader(BaseLoader):
-    def __init__(self, settings: DBSettings, conn: AsyncIOMotorClient = None):
+class AsyncMongoClient(BaseClient):
+    def __init__(self, settings: DBSettings):
         self._settings: DBSettings = settings
-        self._conn: AsyncIOMotorClient = conn
+        self._conn = None
 
     @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
     def _reconnection(self) -> AsyncIOMotorClient:
@@ -31,11 +23,22 @@ class AsyncMongoLoader(BaseLoader):
         )
 
     @property
+    @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
     def conn(self) -> AsyncIOMotorClient:
-        if self._conn is None or not is_alive(self._conn):
+        if self._conn is None:
             return self._reconnection()
 
         return self._conn
+
+    @conn.setter
+    @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
+    def conn(self, value: AsyncIOMotorClient) -> None:
+        self.conn = value
+
+
+class AsyncMongoLoader(BaseLoader):
+    def __init__(self, client: BaseClient):
+        self.client: BaseClient = client
 
     async def load(
         self,
@@ -43,6 +46,6 @@ class AsyncMongoLoader(BaseLoader):
         collection_name: str,
         data: Iterator[ModelMetaclass]
     ) -> List[Any]:
-        cursor = self.conn[db_name][collection_name]
+        cursor = self.client.conn[db_name][collection_name]
         result = await cursor.insert_many(data)
         return result.inserted_ids

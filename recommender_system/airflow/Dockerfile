@@ -22,9 +22,9 @@ RUN export JAVA_HOME
 
 USER airflow
 ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/:/opt/airflow/modules/als_top/
+WORKDIR /opt/airflow
 
-COPY ./requirements.txt .
-COPY ./entrypoint_airflow.sh .
+COPY requirements.txt entrypoint_airflow.sh ./
 COPY --chown=airflow:root ./dags /opt/airflow/dags
 
 RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt

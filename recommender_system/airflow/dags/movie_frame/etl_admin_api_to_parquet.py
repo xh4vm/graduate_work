@@ -4,7 +4,7 @@ from loguru import logger
 from src.core.config import HDFS_CONFIG, SPARK_CONFIG, ADMIN_API_FAKE_CONFIG
 from src.extract.metadata.admin_api import AdminAPIExtractor
 from src.extract.metadata.csv import CSVExtractor
-from src.transform.metadata.movie_frame import MovieFrameTransformer as MetadataTransformer
+from src.transform.metadata.movie_frame import FakeMovieFrameTransformer as MetadataTransformer
 from src.schema.movie_frame import METADATA
 
 
@@ -18,7 +18,7 @@ spark_context = spark.sparkContext
 
 logger.info('[*] Starting etl process admin api to spark')
 
-extractor = CSVExtractor(file_path=ADMIN_API_FAKE_CONFIG.DATA_PATH, headers=['id'], with_headers=True)
+extractor = CSVExtractor(file_path=ADMIN_API_FAKE_CONFIG.DATA_PATH)
 transformer = MetadataTransformer()
 
 raw_data = extractor.extract()
