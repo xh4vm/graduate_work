@@ -31,7 +31,7 @@ class MovieFrameDatagram(JSONModel):
 
 class MovieMetadata(JSONModel):
     id: str
-    duration: int = Field(default_factory=lambda: randint(1, 3) * 60 * 60 * 60)
+    duration: int
 
     @validator('id')
     def valid_uuid(value: str):    
@@ -47,3 +47,8 @@ class MovieMetadata(JSONModel):
             return value
 
         raise ValueError('"duration" must be greater than zero')
+
+
+class FakeMovieMetadata(MovieMetadata):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    duration: int = Field(default_factory=lambda: randint(1, 3) * 60 * 60 * 60)
