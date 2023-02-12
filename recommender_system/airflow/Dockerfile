@@ -18,12 +18,13 @@ RUN apt update && \
     apt-get clean;
 
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
-RUN export JAVA_HOME
+RUN export JAVAgit_HOME
 
 USER airflow
 ENV PYTHONPATH /opt/airflow/:/opt/airflow/src/:/opt/airflow/modules/als_top/
 
 COPY ./requirements.txt .
+COPY ./entrypoint_airflow.sh .
 COPY --chown=airflow:root ./dags /opt/airflow/dags
 
 RUN pip install --no-index --find-links=/opt/wheels -r requirements.txt
