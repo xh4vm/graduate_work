@@ -457,8 +457,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./recommender_system/airflow/modules:/home/developer/modules
-      - ./recommender_system/jupyter-notebook/work:/home/developer/work
+      - ./recommender_system/airflow/modules:/home/jovyan/modules
+      - ./recommender_system/jupyter-notebook/work:/home/jovyan/work
+      - ./recommender_system/jupyter-notebook/work:/opt/work
+      - ./.env:/home/.env
     profiles:
       - dev_graduate
     ports:
