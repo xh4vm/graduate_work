@@ -10,6 +10,7 @@ from als_src.predicter.als_predicter import AlsPredictor
 from als_src.utilities.indexer import Indexer
 from als_src.als_core.logger import logger
 from pyspark.sql import SparkSession
+from uuid import UUID
 
 
 class Recommender:
@@ -85,7 +86,7 @@ class Recommender:
                 row_number().over(window_spec).alias("rank")
             )
             .where(col("rank") <= self.number_top)
-            .withColumn(self.als_predictor.headers_col.user_col, F.lit('0'))
+            .withColumn(self.als_predictor.headers_col.user_col, F.lit(str(UUID(int=0))))
             .groupby(self.als_predictor.headers_col.user_col)
             .agg(
                 F.collect_list(self.als_predictor.headers_col.item_col)
