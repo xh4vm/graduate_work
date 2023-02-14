@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam sequence {
+ ParticipantPadding 20
+ MessageAlign center
+ skinparam BoxPadding 20
+}
+
+title ETL ALS Top
+
+collections Scheduler as sch order 10 #99bbff
+collections HDFS as hdfs order 40 #ffb31a
+collections "ETL ALS top" as etl order 11 #99ff99
+collections "Apache Spark" as spark order 41 #FFFF99
+
+sch -> etl: start task
+etl -> spark: create session
+return SparkSession
+
+etl -> spark: read table
+spark -> hdfs: load from parquet
+return joined data
+spark --> etl: DataFrame
+
+etl -> spark
+spark -> spark: ALS Top
+spark --> etl: recommendations
+
+etl -> spark: save data
+spark -> hdfs: recommendations

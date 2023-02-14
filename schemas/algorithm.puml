@@ -1,0 +1,26 @@
+@startuml
+autonumber
+skinparam sequence {
+ ParticipantPadding 20
+ MessageAlign center
+ skinparam BoxPadding 20
+}
+
+title Algorithm
+
+collections "MongoDB" as mongo order 10 #bb99ff
+actor User #c4ff4d
+
+User -> "Content API": jwt: str | None, ...
+"Content API" -> "Recommender GRPC": user_id: str
+
+"Recommender GRPC" -> Redis: key(user_id): str
+return recommendations: dict[str, Any] | None
+
+"Recommender GRPC" -> mongo: user_id: str
+return recommendations: dict[str, Any] | None
+
+"Recommender GRPC" -> Redis: key(user_id): str, recommendations: dict[str, Any]
+
+"Recommender GRPC" --> "Content API": recommendations: dict[str, Any]
+"Content API" --> User
