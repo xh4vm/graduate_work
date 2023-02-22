@@ -1,0 +1,30 @@
+@startuml
+autonumber
+skinparam sequence {
+ ParticipantPadding 20
+ MessageAlign center
+ skinparam BoxPadding 20
+}
+
+title ETL admin API to parquet
+
+collections Scheduler as sch order 10 #99bbff
+collections HDFS as hdfs order 40 #ffb31a
+collections "ETL Admin API to Parquet" as etl order 11 #99ff99
+collections "Apache Spark" as spark order 41 #FFFF99
+
+sch -> etl: start task
+etl -> spark: create session
+return SparkSession
+
+etl -> "Admin API": get metadata
+return raw metadata
+
+etl -> AnalyticTransformer: raw metadata
+return transformed metadata
+
+etl -> spark: transformed metadata
+return RDD
+
+etl -> spark: save data
+spark -> hdfs: transformed metadata

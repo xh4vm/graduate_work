@@ -1,0 +1,26 @@
+@startuml
+autonumber
+skinparam sequence {
+ ParticipantPadding 20
+ MessageAlign center
+ skinparam BoxPadding 20
+}
+
+title ETL Load to Mongo
+
+collections Scheduler as sch order 10 #99bbff
+collections HDFS as hdfs order 40 #ffb31a
+collections "ETL Load to Mongo" as etl order 11 #99ff99
+collections "Apache Spark" as spark order 41 #FFFF99
+collections "MongoDB" as mongo #bb99ff
+
+sch -> etl: start task
+etl -> spark: create session
+return SparkSession
+
+etl -> spark: read table
+spark -> hdfs: load from parquet
+return recommendations
+spark --> etl: DataFrame
+
+etl -> mongo: save recommendations

@@ -1,0 +1,35 @@
+@startuml
+autonumber
+skinparam sequence {
+ ParticipantPadding 20
+ MessageAlign center
+ skinparam BoxPadding 20
+}
+
+title ETL Join data
+
+collections Scheduler as sch order 10 #99bbff
+collections HDFS as hdfs order 40 #ffb31a
+collections "ETL Join Data" as etl order 11 #99ff99
+collections "Apache Spark" as spark order 41 #FFFF99
+
+sch -> etl: start task
+etl -> spark: create session
+return SparkSession
+
+etl -> spark: read table
+spark -> hdfs: load from parquet
+return analytics data
+spark --> etl: analytics DataFrame
+
+etl -> spark: read table
+spark -> hdfs: load from parquet
+return metadata
+spark --> etl: metadata DataFrame
+
+etl -> spark
+spark -> spark: joining data
+spark --> etl: joining DataFrames
+
+etl -> spark: save data
+spark -> hdfs: joined data
